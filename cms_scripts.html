@@ -19,6 +19,38 @@ const MENU = RAW_MENU.map(m => ({
   icon: m.icon || '' // để dành nếu sau này muốn hiện biểu tượng
 }));
 
+const AUTH_STATE = { ok:false, principal:'', mode:'' };
+
+function setAuthState(ok, meta){
+  AUTH_STATE.ok = !!ok;
+  AUTH_STATE.mode = ok ? (meta?.mode || (meta?.menus ? 'local' : '')) : '';
+  AUTH_STATE.principal = ok ? (meta?.display || meta?.principal || '') : '';
+
+  const blocker = document.getElementById('login_blocker');
+  if (blocker) blocker.classList.toggle('hidden', AUTH_STATE.ok);
+  if (document.body) document.body.classList.toggle('needs-login', !AUTH_STATE.ok);
+
+  const loginBtn = document.getElementById('btn_open_login');
+  if (loginBtn) loginBtn.classList.toggle('hidden', AUTH_STATE.ok);
+
+  const logoutBtn = document.getElementById('btn_logout');
+  if (logoutBtn) logoutBtn.classList.toggle('hidden', !AUTH_STATE.ok);
+
+  const status = document.getElementById('auth_status');
+  if (status){
+    const txt = AUTH_STATE.ok
+      ? ('Đã đăng nhập' + (AUTH_STATE.principal ? ': ' + AUTH_STATE.principal : ''))
+      : 'Chưa đăng nhập';
+    status.textContent = txt;
+    status.classList.toggle('muted', !AUTH_STATE.ok);
+  }
+}
+
+function showLoginDialog(){
+  const dlg = document.getElementById('dlg_login');
+  if (dlg && !dlg.open) dlg.showModal();
+}
+
 
 function renderMenu(){
   const box = document.getElementById('menu');
@@ -54,6 +86,7 @@ function onRoute(){
     if (el) el.classList.toggle('hidden', k !== key);
   });
   setActiveTab(key);
+  if (!AUTH_STATE.ok) return;
   // loader theo key (cũ giữ nguyên) — có thể refactor thành map nếu muốn
   if (key==='dashboard')      loadDashboard();
   else if (key==='customers') { bindCustomerImports(); loadCustomers(); }
@@ -66,6 +99,7 @@ function onRoute(){
 
 
 function applyMenuVisibility(){
+  if (!AUTH_STATE.ok) return;
   const keys = Array.from(document.querySelectorAll('.tabbtn')).map(b=>b.dataset.key);
   runApi('getVisibleMenusForSession', { keys }, v=>{
     const allowed = new Set(v || keys);
@@ -761,6 +795,7 @@ function sendSlipTelegram(){
 /* ========= READY ========= */
 window.addEventListener('hashchange', onRoute);
 window.addEventListener('DOMContentLoaded', ()=>{
+  setAuthState(false);
   renderMenu();
   applyMenuVisibility();
   if(!location.hash) navigate('dashboard');
@@ -811,8 +846,8 @@ function runApi(fn, payload, onOk, onFail){
       const lower = String(msg||'').toLowerCase();
       if (lower.includes('chưa đăng nhập') || lower.includes('cần đăng nhập')){
         setToken('');
-        const dlg=document.getElementById('dlg_login');
-        if (dlg && !dlg.open) dlg.showModal();
+        setAuthState(false);
+        showLoginDialog();
         return;
       }
       fail(err);
@@ -821,17 +856,25 @@ function runApi(fn, payload, onOk, onFail){
 }
 
 // Đăng nhập
-function openLogin(){ document.getElementById('dlg_login').showModal(); }
+function openLogin(){ showLoginDialog(); }
+
+function handleLoginSuccess(res, fallbackUser){
+  if (!res?.ok || !res.token) return false;
+  setToken(res.token);
+  setAuthState(true, res);
+  document.getElementById('dlg_login')?.close();
+  applyMenuVisibility();
+  onRoute();
+  const name = res.display || fallbackUser || '';
+  if (name) alert('Xin chào ' + name);
+  return true;
+}
+
 function doLogin(){
   const u = (document.getElementById('login_user')?.value || '').trim();
   const p = (document.getElementById('login_pass')?.value || '');
   runApi('local_login_api', { user: u, password: p }, res=>{
-    if(!res?.ok || !res.token) return alert('Đăng nhập thất bại.');
-    setToken(res.token);
-    document.getElementById('dlg_login').close();
-    alert('Xin chào ' + (res.display || u));
-    // Reload menu theo quyền
-    applyMenuVisibility();
+    if (!handleLoginSuccess(res, u)) return alert('Đăng nhập thất bại.');
   }, e=> alert(e?.message||e));
 }
 
@@ -839,12 +882,14 @@ function doLogin(){
 function ensureLogin() {
   runApi('whoami', {}, (res)=>{
     if (res && res.ok) {
+      setAuthState(true, res);
       applyMenuVisibility();
+      onRoute();
     } else {
-      const dlg = document.getElementById('dlg_login');
-      if (dlg && !dlg.open) dlg.showModal();
+      setAuthState(false);
+      showLoginDialog();
     }
-  }, ()=>{});
+  }, ()=>{ setAuthState(false); showLoginDialog(); });
 }
 
 function bindLoginButton(){
@@ -856,13 +901,7 @@ function bindLoginButton(){
     const p = (document.getElementById('login_pass')?.value || '');
     if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
     runApi('local_login_api', { user:u, password:p }, res=>{
-      if (res?.ok && res.token){
-        setToken(res.token);
-        document.getElementById('dlg_login')?.close();
-        location.reload();
-      } else {
-        alert('Đăng nhập thất bại.');
-      }
+      if (!handleLoginSuccess(res, u)) alert('Đăng nhập thất bại.');
     }, e=> alert(e?.message || e));
   });
 }
@@ -872,15 +911,27 @@ function logoutAll(){
   const t = getToken();
   runApi('local_logout_api', { token: t }, _=>{
     setToken('');
-    location.reload();
+    setAuthState(false);
+    showLoginDialog();
+    onRoute();
   }, ()=>{
     setToken('');
-    location.reload();
+    setAuthState(false);
+    showLoginDialog();
+    onRoute();
   });
 }
 
 window.addEventListener('DOMContentLoaded', ()=>{
+  setAuthState(false);
   bindLoginButton();
   ensureLogin();
+  const dlg = document.getElementById('dlg_login');
+  if (dlg && !dlg.dataset.guardBound){
+    dlg.dataset.guardBound='1';
+    dlg.addEventListener('cancel', ev=>{
+      if (!AUTH_STATE.ok){ ev.preventDefault(); showLoginDialog(); }
+    });
+  }
 });
 </script>
