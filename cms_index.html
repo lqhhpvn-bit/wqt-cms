@@ -25,7 +25,19 @@
         </div>
 
         <!-- NAV: GIỮ id="menu" (JS cũ có thể gắn sự kiện vào đây) -->
-        <nav id="menu" class="menu-vertical"></nav>
+        <nav id="menu" class="menu-vertical">
+          <!-- Fallback menu (được JS thay thế khi tải xong) -->
+          <button class="tabbtn active" data-key="dashboard" onclick="navigate('dashboard')">Tổng quan</button>
+          <button class="tabbtn" data-key="customers" onclick="navigate('customers')">Khách hàng</button>
+          <button class="tabbtn" data-key="loans" onclick="navigate('loans')">Hợp đồng</button>
+          <button class="tabbtn" data-key="loanmgr" onclick="navigate('loanmgr')">Quản lý khoản vay/Thanh toán</button>
+          <button class="tabbtn" data-key="payhistory" onclick="navigate('payhistory')">Lịch sử thanh toán</button>
+          <button class="tabbtn" data-key="crm" onclick="navigate('crm')">CRM</button>
+          <button class="tabbtn" data-key="telegram" onclick="navigate('telegram')">Nhóm Telegram</button>
+          <button class="tabbtn" data-key="reports" onclick="navigate('reports')">Báo cáo</button>
+          <button class="tabbtn" data-key="settings" onclick="navigate('settings')">Cấu hình</button>
+          <button class="tabbtn" data-key="account" onclick="navigate('account')">Cài đặt</button>
+        </nav>
 
       </aside>
 
