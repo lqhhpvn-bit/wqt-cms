@@ -52,7 +52,12 @@ function setAuthState(ok, meta){
 
 function showLoginDialog(){
   const dlg = document.getElementById('dlg_login');
-  if (dlg && !dlg.open) dlg.showModal();
+  if (!dlg) return;
+  if (!dlg.open) dlg.showModal();
+  const user = document.getElementById('login_user');
+  if (user){
+    setTimeout(()=>{ user.focus(); user.select(); }, 0);
+  }
 }
 
 

@@ -686,56 +686,60 @@
         <!-- ========== DIALOGS (popup giữ nguyên) ========== -->
         <!-- Add/Edit Customer -->
         <dialog id="dlg_customer" class="modal">
-          <div class="head">Khách hàng</div>
-          <div class="body">
-            <label>ID Khách (để trống nếu tạo mới)</label>
-            <input id="dlg_cus_id" />
-            <label>Tên</label>
-            <input id="dlg_cus_name" />
-            <label>SĐT</label>
-            <input id="dlg_cus_phone" />
-            <label>Email</label>
-            <input id="dlg_cus_email" />
-            <label>Ghi chú</label>
-            <textarea id="dlg_cus_note"></textarea>
-          </div>
-          <div class="foot">
-            <button class="btn" onclick="document.getElementById('dlg_customer').close()">Đóng</button>
-            <button id="dlg_cus_save" class="btn primary">Lưu</button>
+          <div class="box">
+            <div class="head">Khách hàng</div>
+            <div class="body">
+              <label>ID Khách (để trống nếu tạo mới)</label>
+              <input id="dlg_cus_id" />
+              <label>Tên</label>
+              <input id="dlg_cus_name" />
+              <label>SĐT</label>
+              <input id="dlg_cus_phone" />
+              <label>Email</label>
+              <input id="dlg_cus_email" />
+              <label>Ghi chú</label>
+              <textarea id="dlg_cus_note"></textarea>
+            </div>
+            <div class="foot">
+              <button class="btn" onclick="document.getElementById('dlg_customer').close()">Đóng</button>
+              <button id="dlg_cus_save" class="btn primary">Lưu</button>
+            </div>
           </div>
         </dialog>
 
         <!-- Add/Edit Loan -->
         <dialog id="dlg_loan" class="modal">
-          <div class="head">Hợp đồng</div>
-          <div class="body">
-            <div class="row">
-              <label>Mã HĐ</label><input id="dlg_loan_id" />
-              <label>PL KH</label><input id="dlg_loan_plkh" />
+          <div class="box">
+            <div class="head">Hợp đồng</div>
+            <div class="body">
+              <div class="row">
+                <label>Mã HĐ</label><input id="dlg_loan_id" />
+                <label>PL KH</label><input id="dlg_loan_plkh" />
+              </div>
+              <div class="row">
+                <label>Khách hàng</label>
+                <select id="dlg_loan_cus_select"></select>
+                <input id="dlg_loan_cusid" placeholder="ID Khách (nếu không chọn ở dropdown)" />
+              </div>
+              <div class="row">
+                <label>Hình thức</label>
+                <select id="dlg_loan_type">
+                  <option>Cuốn chiếu</option>
+                  <option>Cuối kỳ</option>
+                </select>
+                <label>Số tiền</label><input id="dlg_loan_amount" />
+                <label>Lãi %/th</label><input id="dlg_loan_rate" />
+                <label>Kỳ hạn (tháng)</label><input id="dlg_loan_months" />
+              </div>
+              <div class="row">
+                <label>Giải ngân</label><input id="dlg_loan_start" type="date" />
+                <label>Tất toán</label><input id="dlg_loan_close" type="date" />
+              </div>
             </div>
-            <div class="row">
-              <label>Khách hàng</label>
-              <select id="dlg_loan_cus_select"></select>
-              <input id="dlg_loan_cusid" placeholder="ID Khách (nếu không chọn ở dropdown)" />
+            <div class="foot">
+              <button class="btn" onclick="document.getElementById('dlg_loan').close()">Đóng</button>
+              <button id="dlg_loan_save" class="btn primary">Lưu</button>
             </div>
-            <div class="row">
-              <label>Hình thức</label>
-              <select id="dlg_loan_type">
-                <option>Cuốn chiếu</option>
-                <option>Cuối kỳ</option>
-              </select>
-              <label>Số tiền</label><input id="dlg_loan_amount" />
-              <label>Lãi %/th</label><input id="dlg_loan_rate" />
-              <label>Kỳ hạn (tháng)</label><input id="dlg_loan_months" />
-            </div>
-            <div class="row">
-              <label>Giải ngân</label><input id="dlg_loan_start" type="date" />
-              <label>Tất toán</label><input id="dlg_loan_close" type="date" />
-            </div>
-          </div>
-          <div class="foot">
-            <button class="btn" onclick="document.getElementById('dlg_loan').close()">Đóng</button>
-            <button id="dlg_loan_save" class="btn primary">Lưu</button>
           </div>
         </dialog>
       </main>
