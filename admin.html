@@ -17,6 +17,7 @@
     label { display:block; font-size:12px; color:#475569; margin:4px 0 6px; }
     input, select, textarea { width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; }
     input:focus, select:focus, textarea:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(79,70,229,.15); outline:none; }
+    input[readonly] { background:#f3f4f6; color:#6b7280; }
     .chk { display:flex; align-items:center; gap:8px; margin-top:26px; }
     button { padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; background:#111827; color:#fff; cursor:pointer; font-weight:600; }
     button.indigo { background:var(--indigo); border-color:var(--indigo); }
@@ -27,6 +28,15 @@
     thead th { background:#fafafa; position:sticky; top:0; z-index:1; }
     tr:hover { background:#fafafa; }
     .muted { color:var(--muted); font-size:12px; }
+    .menu-grid { display:flex; flex-wrap:wrap; gap:10px 16px; margin:10px 0 6px; }
+    .menu-grid label { display:flex; align-items:center; gap:6px; font-size:13px; color:#1f2937; }
+    .menu-grid input { width:auto; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+    .badge { display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px; background:#eef2ff; color:#3730a3; font-size:12px; font-weight:600; margin:2px; }
+    .table-btn { padding:6px 10px; border-radius:8px; font-size:12px; border:1px solid #d1d5db; background:#fff; color:#111; cursor:pointer; }
+    .table-btn.danger { border-color:#ef4444; color:#b91c1c; }
+    .table-btn.primary { border-color:var(--indigo); color:var(--indigo); }
+    .table-btn:hover { box-shadow:none; transform:none; opacity:1; background:#f9fafb; }
   </style>
 </head>
 <body>
@@ -77,6 +87,55 @@
       <div class="muted" id="msg"></div>
     </div>
 
+    <div class="card" id="cardAccounts">
+      <h2 style="margin-top:0">Quản lý tài khoản đăng nhập WQT</h2>
+      <div class="row">
+        <div class="col">
+          <label>Tài khoản</label>
+          <input id="acc_user" placeholder="Ví dụ: admin" />
+        </div>
+        <div class="col">
+          <label>Tên hiển thị</label>
+          <input id="acc_display" placeholder="Tên nhân viên" />
+        </div>
+        <div class="col">
+          <label>Mật khẩu mới</label>
+          <input id="acc_password" type="password" placeholder="Để trống nếu giữ nguyên" />
+        </div>
+        <div class="col chk" style="min-width:140px">
+          <input id="acc_active" type="checkbox" checked />
+          <label for="acc_active" style="margin:0">Kích hoạt</label>
+        </div>
+      </div>
+
+      <div class="col" style="padding:0">
+        <label>Quyền menu (chọn những mục được phép sử dụng)</label>
+        <div id="acc_menus" class="menu-grid"></div>
+        <div class="muted">Bỏ chọn mục để ẩn khỏi giao diện Web Quản Trị.</div>
+      </div>
+
+      <div class="actions">
+        <button class="indigo" id="btnAccSave">Lưu tài khoản</button>
+        <button class="ghost" id="btnAccNew">Làm mới form</button>
+      </div>
+      <div class="muted" id="acc_msg" style="margin-top:6px"></div>
+
+      <div style="overflow:auto; max-height:50vh; margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>Tài khoản</th>
+              <th>Tên hiển thị</th>
+              <th>Quyền menu</th>
+              <th>Trạng thái</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="acc_rows"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h3 style="margin:0">Danh sách cột</h3>
@@ -110,6 +169,21 @@
 
     let SCHEMA = null;
     let current = 'CUSTOMERS';
+    const MENU_LABELS = {
+      dashboard: 'Tổng quan',
+      customers: 'Khách hàng',
+      loans: 'Hợp đồng',
+      loanmgr: 'Quản lý khoản vay/Thanh toán',
+      payhistory: 'Lịch sử thanh toán',
+      crm: 'CRM',
+      telegram: 'Nhóm Telegram',
+      reports: 'Báo cáo',
+      settings: 'Cấu hình',
+      account: 'Cài đặt'
+    };
+    let ACCOUNT_MENUS = [];
+    let ACCOUNTS = [];
+    let selectedAccount = null;
 
     document.addEventListener('DOMContentLoaded', ()=>{
       loadSchema();
@@ -117,6 +191,15 @@
       document.getElementById('btnApply').onclick = ()=>{
         google.script.run.withSuccessHandler(()=>{ alert('Đã áp dụng Schema sang các sheet dữ liệu.'); loadSchema(); })
           .withFailureHandler(showErr).api_schema_apply();
+      };
+      loadAccounts();
+      const saveBtn = document.getElementById('btnAccSave');
+      if (saveBtn) saveBtn.onclick = saveAccount;
+      const newBtn = document.getElementById('btnAccNew');
+      if (newBtn) newBtn.onclick = ()=>{
+        clearAccountForm();
+        const msg = document.getElementById('acc_msg');
+        if (msg) msg.textContent = '';
       };
     });
 
@@ -181,6 +264,166 @@
         document.getElementById('msg').textContent = 'Đã thêm cột "'+field+'". Nhấn "Áp dụng Schema" để đồng bộ sang sheet.';
         loadSchema();
       }).withFailureHandler(showErr).api_schema_add(current, field, label, type, req, ev, defv);
+    }
+
+    function loadAccounts(){
+      google.script.run.withSuccessHandler(res=>{
+        ACCOUNT_MENUS = res?.allMenus || [];
+        ACCOUNTS = res?.rows || [];
+        const selected = selectedAccount && ACCOUNTS.find(a=>String(a.user).toLowerCase()===String(selectedAccount).toLowerCase());
+        if (!selected) selectedAccount = null;
+        renderMenuChoices(selected?.menus || []);
+        renderAccountRows();
+        if (selectedAccount && !selected){
+          const msg = document.getElementById('acc_msg');
+          if (msg) msg.textContent = 'Tài khoản đã bị xoá.';
+          clearAccountForm();
+        }
+      }).withFailureHandler(showErr).admin_listLocalUsers();
+    }
+
+    function renderMenuChoices(selectedMenus){
+      const wrap = document.getElementById('acc_menus');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      if (!ACCOUNT_MENUS.length){
+        const span = document.createElement('span');
+        span.className = 'muted';
+        span.textContent = 'Chưa có cấu hình MENU_CONFIG.';
+        wrap.appendChild(span);
+        return;
+      }
+      const selectedSet = new Set((selectedMenus||[]).map(m=>String(m)));
+      ACCOUNT_MENUS.forEach(key=>{
+        const id = 'acc_menu_' + key;
+        const label = document.createElement('label');
+        label.setAttribute('for', id);
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = id;
+        input.value = key;
+        if (selectedSet.has(key)) input.checked = true;
+        const span = document.createElement('span');
+        span.textContent = MENU_LABELS[key] || key;
+        label.appendChild(input);
+        label.appendChild(span);
+        wrap.appendChild(label);
+      });
+    }
+
+    function renderAccountRows(){
+      const tbody = document.getElementById('acc_rows');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      ACCOUNTS.forEach(acc=>{
+        const tr = document.createElement('tr');
+        const tdUser = document.createElement('td'); tdUser.textContent = acc.user || '';
+        const tdDisp = document.createElement('td'); tdDisp.textContent = acc.display || acc.user || '';
+        const tdMenus = document.createElement('td');
+        if (acc.menus && acc.menus.length){
+          acc.menus.forEach(m=>{
+            const chip = document.createElement('span');
+            chip.className = 'badge';
+            chip.textContent = MENU_LABELS[m] || m;
+            tdMenus.appendChild(chip);
+          });
+        } else {
+          tdMenus.innerHTML = '<span class="muted">Không có</span>';
+        }
+        const tdActive = document.createElement('td');
+        tdActive.textContent = acc.active ? 'Đang hoạt động' : 'Đã khoá';
+        const tdAct = document.createElement('td');
+        tdAct.style.whiteSpace = 'nowrap';
+        const btnSel = document.createElement('button');
+        btnSel.className = 'table-btn primary';
+        btnSel.textContent = 'Chọn';
+        btnSel.onclick = ()=> selectAccount(acc.user);
+        const btnDel = document.createElement('button');
+        btnDel.className = 'table-btn danger';
+        btnDel.textContent = 'Xoá';
+        btnDel.onclick = ()=> deleteAccount(acc.user);
+        tdAct.appendChild(btnSel);
+        tdAct.appendChild(btnDel);
+        tr.appendChild(tdUser);
+        tr.appendChild(tdDisp);
+        tr.appendChild(tdMenus);
+        tr.appendChild(tdActive);
+        tr.appendChild(tdAct);
+        if (selectedAccount && acc.user && String(acc.user).toLowerCase() === String(selectedAccount).toLowerCase()){
+          tr.style.background = '#eef2ff';
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    function collectSelectedMenus(){
+      const wrap = document.getElementById('acc_menus');
+      if (!wrap) return [];
+      return Array.from(wrap.querySelectorAll('input[type="checkbox"]:checked')).map(el=>el.value);
+    }
+
+    function selectAccount(user){
+      const acc = ACCOUNTS.find(a=>String(a.user).toLowerCase() === String(user).toLowerCase());
+      if (!acc) return;
+      selectedAccount = acc.user;
+      const inputUser = document.getElementById('acc_user');
+      if (inputUser){ inputUser.value = acc.user || ''; inputUser.readOnly = true; }
+      const inputDisplay = document.getElementById('acc_display');
+      if (inputDisplay) inputDisplay.value = acc.display || acc.user || '';
+      const pw = document.getElementById('acc_password'); if (pw) pw.value = '';
+      const active = document.getElementById('acc_active'); if (active) active.checked = !!acc.active;
+      renderMenuChoices(acc.menus || []);
+      const msg = document.getElementById('acc_msg');
+      if (msg) msg.textContent = 'Đang chỉnh sửa tài khoản "' + (acc.user || '') + '".';
+      renderAccountRows();
+    }
+
+    function clearAccountForm(){
+      selectedAccount = null;
+      const inputUser = document.getElementById('acc_user');
+      if (inputUser){ inputUser.value=''; inputUser.readOnly = false; }
+      const inputDisplay = document.getElementById('acc_display'); if (inputDisplay) inputDisplay.value='';
+      const pw = document.getElementById('acc_password'); if (pw) pw.value='';
+      const active = document.getElementById('acc_active'); if (active) active.checked = true;
+      renderMenuChoices([]);
+      renderAccountRows();
+    }
+
+    function saveAccount(){
+      const inputUser = document.getElementById('acc_user');
+      const user = (inputUser?.value || '').trim();
+      if (!user){ alert('Nhập tài khoản.'); return; }
+      const display = (document.getElementById('acc_display')?.value || '').trim() || user;
+      const password = document.getElementById('acc_password')?.value || '';
+      const active = document.getElementById('acc_active')?.checked !== false;
+      const menus = collectSelectedMenus();
+      if (!menus.length && !confirm('Tài khoản không có quyền menu nào. Bạn chắc chắn muốn lưu?')) return;
+      google.script.run.withSuccessHandler(res=>{
+        const msg = document.getElementById('acc_msg');
+        if (msg) msg.textContent = 'Đã lưu tài khoản "' + user + '".';
+        if (!password){
+          const pw = document.getElementById('acc_password');
+          if (pw) pw.value = '';
+        }
+        if (!selectedAccount || String(selectedAccount).toLowerCase() !== user.toLowerCase()){
+          clearAccountForm();
+        }
+        selectedAccount = user;
+        loadAccounts();
+      }).withFailureHandler(showErr).admin_upsertLocalUser(user, display, password || null, menus.join(','), active);
+    }
+
+    function deleteAccount(user){
+      if (!user) return;
+      if (!confirm('Xoá tài khoản "' + user + '"?')) return;
+      google.script.run.withSuccessHandler(()=>{
+        if (selectedAccount && String(selectedAccount).toLowerCase() === String(user).toLowerCase()){
+          clearAccountForm();
+          const msg = document.getElementById('acc_msg');
+          if (msg) msg.textContent = 'Đã xoá tài khoản "' + user + '".';
+        }
+        loadAccounts();
+      }).withFailureHandler(showErr).admin_deleteLocalUser(user);
     }
 
     function showErr(e){ alert('Lỗi: '+(e && e.message ? e.message : e)); }
