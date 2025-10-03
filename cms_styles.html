@@ -188,6 +188,27 @@
   .card-title{
     font-weight:700; margin-bottom:8px;
   }
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:16px;
+    margin-top:16px;
+  }
+  .feature{
+    padding:16px;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    background:linear-gradient(135deg, rgba(79,70,229,0.08), rgba(255,255,255,0));
+    box-shadow:0 10px 24px rgba(79,70,229,0.08);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .feature-title{
+    font-weight:700;
+    color:#1f2937;
+    letter-spacing:.2px;
+  }
   .alert{
     margin-top:12px;
     padding:12px 14px;
