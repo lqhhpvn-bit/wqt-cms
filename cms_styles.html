@@ -404,14 +404,18 @@
   }
 
   /* ================== MODAL ================== */
-  .modal{
+  dialog.modal{
     position:fixed; inset:0; z-index:200;
     display:none; align-items:center; justify-content:center;
-    background:rgba(17,24,39,.35);
     padding:16px;
+    border:none;
+    background:transparent;
   }
-  .modal.show{ display:flex; }
-  .modal .box{
+  dialog.modal[open]{ display:flex; }
+  dialog.modal::backdrop{
+    background:rgba(17,24,39,.35);
+  }
+  dialog.modal .box{
     width:min(720px, 96vw);
     background:#fff;
     border-radius:16px;
