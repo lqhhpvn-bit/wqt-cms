@@ -404,18 +404,27 @@
   }
 
   /* ================== MODAL ================== */
-  dialog.modal{
+  dialog.modal,
+  .modal-overlay{
     position:fixed; inset:0; z-index:200;
     display:none; align-items:center; justify-content:center;
     padding:16px;
     border:none;
     background:transparent;
   }
-  dialog.modal[open]{ display:flex; }
+  dialog.modal[open],
+  .modal-overlay.show{ display:flex; }
   dialog.modal::backdrop{
     background:rgba(17,24,39,.35);
   }
-  dialog.modal .box{
+  .modal-overlay::before{
+    content:"";
+    position:absolute; inset:0;
+    background:rgba(17,24,39,.35);
+  }
+  dialog.modal .box,
+  .modal-overlay .box{
+    position:relative;
     width:min(720px, 96vw);
     background:#fff;
     border-radius:16px;

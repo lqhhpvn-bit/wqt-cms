@@ -53,10 +53,30 @@ function setAuthState(ok, meta){
 function showLoginDialog(){
   const dlg = document.getElementById('dlg_login');
   if (!dlg) return;
-  if (!dlg.open) dlg.showModal();
+  if (dlg.classList?.contains('modal-overlay')){
+    dlg.classList.add('show');
+  } else if (typeof dlg.showModal === 'function'){
+    if (!dlg.open) dlg.showModal();
+  } else {
+    dlg.setAttribute('open', 'true');
+    dlg.classList.add('show');
+  }
   const user = document.getElementById('login_user');
   if (user){
     setTimeout(()=>{ user.focus(); user.select(); }, 0);
+  }
+}
+
+function closeLoginDialog(){
+  const dlg = document.getElementById('dlg_login');
+  if (!dlg) return;
+  if (dlg.classList?.contains('modal-overlay')){
+    dlg.classList.remove('show');
+  } else if (typeof dlg.close === 'function'){
+    dlg.close();
+  } else {
+    dlg.removeAttribute('open');
+    dlg.classList.remove('show');
   }
 }
 
@@ -875,7 +895,7 @@ function handleLoginSuccess(res, fallbackUser){
   if (!res?.ok || !res.token) return false;
   setToken(res.token);
   setAuthState(true, res);
-  document.getElementById('dlg_login')?.close();
+  closeLoginDialog();
   applyMenuVisibility();
   onRoute();
   const name = res.display || fallbackUser || '';
