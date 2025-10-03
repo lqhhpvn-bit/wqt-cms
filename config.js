@@ -24,6 +24,7 @@ const MENU_CONFIG = [
   { key: 'loanmgr',    title: 'Quản lý khoản vay/Thanh toán',  icon: 'calculator' }, // gộp
   { key: 'payhistory', title: 'Lịch sử thanh toán',            icon: 'clock' },
   { key: 'crm',        title: 'CRM',                           icon: 'briefcase' },
+  { key: 'telegram',   title: 'Nhóm Telegram',                 icon: 'send' },
   { key: 'reports',    title: 'Báo cáo',                       icon: 'pie-chart' },
   { key: 'settings',   title: 'Cấu hình',                      icon: 'sliders' },
   { key: 'account',    title: 'Cài đặt',                       icon: 'settings' }     // hiển thị, font, mật khẩu
