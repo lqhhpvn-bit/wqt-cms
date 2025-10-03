@@ -83,7 +83,13 @@ function toDateInput(v){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
-function addMonths(iso, n){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; d.setMonth(d.getMonth()+Number(n||0)); return toDateInput(d); }
+function addMonths(iso, n){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  d.setMonth(d.getMonth() + Number(n || 0));
+  return toDateInput(d);
+}
 function hmap(headers){ const m={}; (headers||[]).forEach((h,i)=> m[String(h).trim()]=i); return m; }
 const pick=(row, idx)=> (idx>=0 && idx!=null) ? row[idx] : '';
 function isInThisWeek(dateStr){
