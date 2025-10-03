@@ -117,54 +117,59 @@
           <div id="dashboard_kpis_hidden" class="alert info hidden">KPI đang tắt. Vào tab <b>Cấu hình</b> để bật hiển thị.</div>
 
           <!-- Controls for “this week” sections -->
-          <div class="row align-right">
-            <label>Hiển thị:</label>
-            <select id="dash_limit" class="input" style="width:120px">
-              <option value="5">5 gần nhất</option>
-              <option value="10">10 gần nhất</option>
-              <option value="20">20 gần nhất</option>
-            </select>
-            <button class="btn" onclick="loadDashboardWeekBlocks()">Áp dụng</button>
-          </div>
-
-          <div class="dash-week-grid">
-            <div class="card">
-              <div class="card-head">Hợp đồng tạo trong tuần</div>
-              <div class="card-body">
-                <table class="tbl">
-                  <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
-                  <tbody id="dash_loans_week"></tbody>
-                </table>
+          <div class="dash-week">
+            <div class="dash-week-head">
+              <div class="dash-week-label">Hoạt động tuần này</div>
+              <div class="dash-week-filter">
+                <label for="dash_limit">Hiển thị</label>
+                <select id="dash_limit" class="input">
+                  <option value="5">5 gần nhất</option>
+                  <option value="10">10 gần nhất</option>
+                  <option value="20">20 gần nhất</option>
+                </select>
+                <button class="btn" onclick="loadDashboardWeekBlocks()">Áp dụng</button>
               </div>
             </div>
 
-            <div class="card">
-              <div class="card-head">Thanh toán trong tuần</div>
-              <div class="card-body">
-                <table class="tbl">
-                  <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th></tr></thead>
-                  <tbody id="dash_pays_week"></tbody>
-                </table>
+            <div class="dash-week-grid">
+              <div class="card">
+                <div class="card-head">Hợp đồng tạo trong tuần</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+                    <tbody id="dash_loans_week"></tbody>
+                  </table>
+                </div>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-head">Đến hạn hôm nay</div>
-              <div class="card-body">
-                <table class="tbl">
-                  <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Kỳ</th><th>Đến hạn</th></tr></thead>
-                  <tbody id="dash_due_today"></tbody>
-                </table>
+              <div class="card">
+                <div class="card-head">Thanh toán trong tuần</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th></tr></thead>
+                    <tbody id="dash_pays_week"></tbody>
+                  </table>
+                </div>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-head">Tất toán hôm nay</div>
-              <div class="card-body">
-                <table class="tbl">
-                  <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày tất toán</th><th>Trạng thái</th></tr></thead>
-                  <tbody id="dash_close_today"></tbody>
-                </table>
+              <div class="card">
+                <div class="card-head">Đến hạn hôm nay</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Kỳ</th><th>Đến hạn</th></tr></thead>
+                    <tbody id="dash_due_today"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">Tất toán hôm nay</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày tất toán</th><th>Trạng thái</th></tr></thead>
+                    <tbody id="dash_close_today"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -727,6 +732,7 @@
       </main>
     </div>
 
+    <?!= include('cms_login'); ?>
     <?!= include('cms_scripts'); ?>
   </body>
 </html>

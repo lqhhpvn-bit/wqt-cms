@@ -138,12 +138,73 @@ function mustHave(menuKey){
 
 /** ====== HYBRID AUTH (Local account + Google SSO) ====== */
 /* Sheet ACCOUNTS: User | Display | PasswordHash | Salt | Menus | Active */
+function _ensureAccountSheet_(){
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName('ACCOUNTS');
+  var headers = ['User','Display','PasswordHash','Salt','Menus','Active'];
+  if (!sh){
+    sh = ss.insertSheet('ACCOUNTS');
+  }
+  var needsHeader = sh.getLastRow() < 1;
+  var curHead = sh.getRange(1,1,1,headers.length).getDisplayValues()[0];
+  if (!needsHeader){
+    for (var i=0;i<headers.length;i++){
+      if (String(curHead[i]||'').trim() !== headers[i]){ needsHeader = true; break; }
+    }
+  }
+  if (needsHeader){
+    sh.getRange(1,1,1,headers.length).setValues([headers]);
+  }
+  sh.setFrozenRows(1);
+
+  var userIdx = 0, dispIdx = 1, hashIdx = 2, saltIdx = 3, menuIdx = 4, actIdx = 5;
+  var lastRow = sh.getLastRow();
+  var menusAll = (typeof MENU_CONFIG !== 'undefined' && MENU_CONFIG.length)
+    ? MENU_CONFIG.map(function(m){ return m.key; }).join(',')
+    : 'dashboard';
+  var rows = [];
+  var adminUpdated = false;
+  var hasAdmin = false;
+  if (lastRow > 1){
+    var rng = sh.getRange(2,1,lastRow-1,headers.length);
+    rows = rng.getDisplayValues();
+    rows.forEach(function(r, idx){
+      if (String(r[userIdx]||'').trim().toLowerCase() === 'admin'){
+        hasAdmin = true;
+        var needsUpdate = !r[hashIdx] || !r[saltIdx];
+        if (!r[dispIdx]){ r[dispIdx] = 'Quản trị hệ thống'; needsUpdate = true; }
+        if (!r[menuIdx]){ r[menuIdx] = menusAll; needsUpdate = true; }
+        if (!r[actIdx]){ r[actIdx] = 'TRUE'; needsUpdate = true; }
+        if (needsUpdate){
+          var salt = Utilities.getUuid();
+          var hash = _hash256b64_('1234' + salt);
+          r[hashIdx] = hash;
+          r[saltIdx] = salt;
+          adminUpdated = true;
+        }
+      }
+    });
+    if (adminUpdated){
+      rng.setValues(rows);
+    }
+  }
+  if (!hasAdmin){
+    var saltNew = Utilities.getUuid();
+    var hashNew = _hash256b64_('1234' + saltNew);
+    var row = ['admin','Quản trị hệ thống', hashNew, saltNew, menusAll, 'TRUE'];
+    sh.appendRow(row);
+  }
+  return sh;
+}
 function _accSheet_(){
-  var ss=SpreadsheetApp.getActive(); var sh=ss.getSheetByName('ACCOUNTS');
-  if(!sh) throw new Error('Thiếu sheet ACCOUNTS (User|Display|PasswordHash|Salt|Menus|Active).');
-  var lr=sh.getLastRow(), lc=sh.getLastColumn();
-  if(lr<1||lc<1) throw new Error('Sheet ACCOUNTS rỗng.');
-  var vals=sh.getRange(1,1,lr,lc).getDisplayValues();
+  var sh = _ensureAccountSheet_();
+  var lr = sh.getLastRow();
+  var lc = Math.max(sh.getLastColumn(), 6);
+  if (lr < 1){
+    sh.getRange(1,1,1,6).setValues([['User','Display','PasswordHash','Salt','Menus','Active']]);
+    lr = sh.getLastRow();
+  }
+  var vals = sh.getRange(1,1,lr,lc).getDisplayValues();
   return {headers: vals[0], rows: vals.slice(1), sheet: sh};
 }
 function _accMap_(h){ var m={}; h.forEach((x,i)=>m[String(x).trim()]=i); return m; }
