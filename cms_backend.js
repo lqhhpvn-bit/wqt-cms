@@ -86,6 +86,16 @@ function _getProps_(){ return PropertiesService.getScriptProperties(); }
 function _getAllowed_(){
   try { return JSON.parse(_getProps_().getProperty('ALLOWED') || '[]'); } catch(e){ return []; }
 }
+function _allowGoogleSso_(){
+  try {
+    var raw = _getProps_().getProperty('ALLOW_GOOGLE_SSO');
+    if (!raw) return false;
+    raw = String(raw).trim().toLowerCase();
+    return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
+  } catch(e){
+    return false;
+  }
+}
 function _cms_guard_() {
   var email = Session.getActiveUser().getEmail() || '';
   if (ALLOWED_EMAILS && ALLOWED_EMAILS.length){
@@ -769,6 +779,9 @@ function setAppConfig(payload){
   if (typeof payload.showDashboardKpis !== 'undefined'){
     p.setProperty('SHOW_KPI', payload.showDashboardKpis ? 'true' : 'false');
   }
+  if (typeof payload.allowGoogleSso !== 'undefined'){
+    p.setProperty('ALLOW_GOOGLE_SSO', payload.allowGoogleSso ? 'true' : 'false');
+  }
   if (payload.telegram){
     if (typeof payload.telegram.bot !== 'undefined'){ p.setProperty('TG_BOT', String(payload.telegram.bot||'')); }
     if (typeof payload.telegram.chatId !== 'undefined'){ p.setProperty('TG_CHAT', String(payload.telegram.chatId||'')); }
@@ -823,7 +836,7 @@ function getDashboardKpis_api(payload){
   };
 }
 
-/** Danh sách HĐ trong tuần + limit */
+/** Danh sách HĐ gần nhất + limit */
 function listRecentLoans_api(payload){
   mustHaveHybrid(payload, 'dashboard');
   payload = payload || {};
@@ -831,17 +844,40 @@ function listRecentLoans_api(payload){
 
   var L = _getSheetValues_('HỢP ĐỒNG'); var H=_headerMap_(L.headers);
   var idxId=H['Mã HĐ']??H['MaHD'], idxName=H['Tên KH']??H['TenKH']??H['Tên'], idxStart=H['Ngày giải ngân']??H['Bắt đầu']??H['StartDate'], idxAmt=H['Số tiền vay']??H['Gốc']??H['Principal'];
-  var now=new Date(); var first=new Date(now), day=(first.getDay()||7); first.setDate(first.getDate()-day+1); first=_startOfDay_(first);
-  var last=_endOfDay_(new Date(first)); last.setDate(first.getDate()+6);
+  var idxStatus=H['Trạng thái']??H['TrangThai']??H['Status'];
 
-  var arr=(L.rows||[]).map(r=>({ id:_pick_(r,idxId), name:_pick_(r,idxName), start:_toDate_(_pick_(r,idxStart)), amount:_toNum_(_pick_(r,idxAmt)) }))
-    .filter(o=>o.id && o.start && o.start>=first && o.start<=last)
-    .sort((a,b)=> b.start-a.start)
-    .slice(0, limit);
+  var arr=(L.rows||[]).map(function(r, idx){
+      return {
+        id:_pick_(r,idxId),
+        name:_pick_(r,idxName),
+        start:_toDate_(_pick_(r,idxStart)),
+        startRaw:_pick_(r,idxStart),
+        amount:_toNum_(_pick_(r,idxAmt)),
+        status:_pick_(r,idxStatus),
+        rowIndex: idx
+      };
+    })
+    .filter(function(o){ return o.id; })
+    .sort(function(a,b){
+      var aTime = a.start ? a.start.getTime() : 0;
+      var bTime = b.start ? b.start.getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return b.rowIndex - a.rowIndex;
+    })
+    .slice(0, limit)
+    .map(function(o){
+      return {
+        id: o.id,
+        name: o.name,
+        start: o.start ? _ymd_(o.start) : (o.startRaw || ''),
+        amount: o.amount,
+        status: o.status
+      };
+    });
   return { ok:true, rows: arr };
 }
 
-/** Payments trong tuần + limit */
+/** Payments gần nhất + limit */
 function listRecentPayments_api(payload){
   mustHaveHybrid(payload, 'dashboard');
   payload = payload || {};
@@ -849,13 +885,34 @@ function listRecentPayments_api(payload){
 
   var P = _getSheetValues_('THANH TOÁN'); var H=_headerMap_(P.headers);
   var idxDate=H['Ngày'], idxType=H['Loại']??H['PTTT'], idxAmt=H['Số tiền'], idxLoan=H['Mã HĐ'];
-  var now=new Date(); var first=new Date(now), day=(first.getDay()||7); first.setDate(first.getDate()-day+1); first=_startOfDay_(first);
-  var last=_endOfDay_(new Date(first)); last.setDate(first.getDate()+6);
 
-  var arr=(P.rows||[]).map(r=>({ date:_toDate_(_pick_(r,idxDate)), type:_pick_(r,idxType), amount:_toNum_(_pick_(r,idxAmt)), loan:_pick_(r,idxLoan) }))
-    .filter(o=>o.date && o.date>=first && o.date<=last)
-    .sort((a,b)=> b.date-a.date)
-    .slice(0, limit);
+  var arr=(P.rows||[]).map(function(r, idx){
+      var dateObj = _toDate_(_pick_(r,idxDate));
+      return {
+        date: dateObj,
+        dateRaw: _pick_(r,idxDate),
+        type: _pick_(r,idxType),
+        amount: _toNum_(_pick_(r,idxAmt)),
+        loan: _pick_(r,idxLoan),
+        rowIndex: idx
+      };
+    })
+    .filter(function(o){ return o.loan || o.amount || o.dateRaw; })
+    .sort(function(a,b){
+      var aTime = a.date ? a.date.getTime() : 0;
+      var bTime = b.date ? b.date.getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return b.rowIndex - a.rowIndex;
+    })
+    .slice(0, limit)
+    .map(function(o){
+      return {
+        date: o.date ? _ymd_(o.date) : (o.dateRaw || ''),
+        type: o.type,
+        amount: o.amount,
+        loan: o.loan
+      };
+    });
   return { ok:true, rows: arr };
 }
 

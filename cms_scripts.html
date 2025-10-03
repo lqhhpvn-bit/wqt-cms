@@ -104,6 +104,31 @@ function isInThisWeek(dateStr){
   return d >= first && d <= last;
 }
 
+function renderTableRows(tbody, rows, fallbackCols){
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const cols = fallbackCols || (tbody.closest('table')?.tHead?.rows?.[0]?.cells?.length) || 1;
+  if (!rows || !rows.length){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    td.className = 'muted';
+    td.textContent = 'Chưa có dữ liệu';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  rows.forEach(row=>{
+    const tr = document.createElement('tr');
+    row.forEach(val=>{
+      const td = document.createElement('td');
+      td.textContent = val;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
 /* ========= DASHBOARD ========= */
 function loadDashboard(){
   runApi('getAppConfig', {}, cfg=>{
@@ -138,44 +163,45 @@ function loadDashboardWeekBlocks(){
   const limit = Number(document.getElementById('dash_limit')?.value || 5);
   runApi('listRecentLoans_api', { limit }, res=>{
     const tb=document.getElementById('dash_loans_week');
-    if (tb) tb.innerHTML='';
-    (res?.rows||[]).forEach(o=>{
-      const tr=document.createElement('tr');
-      [o.id, o.name||'', fmt(o.start), money(o.amount)]
-        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
-      tb?.appendChild(tr);
-    });
+    const rows = (res?.rows||[]).map(o=>[
+      o.id,
+      o.name||'',
+      fmt(o.start),
+      money(o.amount),
+      o.status || ''
+    ]);
+    renderTableRows(tb, rows, 5);
   }, ()=>{});
 
   runApi('listRecentPayments_api', { limit }, res=>{
     const tb=document.getElementById('dash_pays_week');
-    if (tb) tb.innerHTML='';
-    (res?.rows||[]).forEach(o=>{
-      const tr=document.createElement('tr');
-      [fmt(o.date), o.loan||'', o.type||'', money(o.amount)]
-        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
-      tb?.appendChild(tr);
-    });
+    const rows = (res?.rows||[]).map(o=>[
+      fmt(o.date),
+      o.loan || '',
+      o.type || '',
+      money(o.amount)
+    ]);
+    renderTableRows(tb, rows, 4);
   }, ()=>{});
 
   const todayISO = new Date().toISOString().slice(0,10);
   runApi('getRemindersToday', { todayISO }, rem=>{
-    const dueT  = document.getElementById('dash_due_today');  if (dueT)  dueT.innerHTML='';
-    const closT = document.getElementById('dash_close_today');if (closT) closT.innerHTML='';
-    (rem?.dueToday||[]).forEach(o=>{
-      const tr=document.createElement('tr');
-      [o.id, o.name||'', o.k||'', fmt(o.due)].forEach(v=>{
-        const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
-      });
-      dueT?.appendChild(tr);
-    });
-    (rem?.closeToday||[]).forEach(o=>{
-      const tr=document.createElement('tr');
-      [o.id, o.name||'', fmt(o.close), o.status||''].forEach(v=>{
-        const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
-      });
-      closT?.appendChild(tr);
-    });
+    const dueT  = document.getElementById('dash_due_today');
+    const closT = document.getElementById('dash_close_today');
+    const dueRows = (rem?.dueToday||[]).map(o=>[
+      o.id,
+      o.name || '',
+      o.k || '',
+      fmt(o.due)
+    ]);
+    const closeRows = (rem?.closeToday||[]).map(o=>[
+      o.id,
+      o.name || '',
+      fmt(o.close),
+      o.status || ''
+    ]);
+    renderTableRows(dueT, dueRows, 4);
+    renderTableRows(closT, closeRows, 4);
   }, ()=>{});
 }
 
