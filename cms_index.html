@@ -34,21 +34,26 @@
         <section id="view-dashboard" class="view">
           <h2>Tổng quan</h2>
 
-          <div id="dashboard_kpis" class="kpi-columns">
-            <div class="kpi-column">
-              <div class="kpi-group-title">Nguồn vốn & Thu</div>
-              <div class="kpi-stack">
+          <div id="dashboard_kpis" class="kpi-grid4">
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Nguồn vốn</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Quỹ vốn</div>
                   <div class="kpi-value" id="kpi_fund">0</div>
                 </div>
                 <div class="kpi">
-                  <div class="kpi-title">Tổng số tiền vay</div>
-                  <div class="kpi-value" id="kpi_amount">0</div>
-                </div>
-                <div class="kpi">
                   <div class="kpi-title">Quỹ còn lại</div>
                   <div class="kpi-value" id="kpi_fund_left">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Dòng tiền</div>
+              <div class="kpi-panel-body">
+                <div class="kpi">
+                  <div class="kpi-title">Tổng số tiền vay</div>
+                  <div class="kpi-value" id="kpi_amount">0</div>
                 </div>
                 <div class="kpi">
                   <div class="kpi-title">Gốc đã thu</div>
@@ -64,9 +69,9 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-column">
-              <div class="kpi-group-title">Hợp đồng & Khách hàng</div>
-              <div class="kpi-stack">
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Khách hàng</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Tổng số KH</div>
                   <div class="kpi-value" id="kpi_cus_total">0</div>
@@ -75,6 +80,11 @@
                   <div class="kpi-title">KH đang vay</div>
                   <div class="kpi-value" id="kpi_cus_active">0</div>
                 </div>
+              </div>
+            </div>
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Hợp đồng</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Tổng số HĐ</div>
                   <div class="kpi-value" id="kpi_loans">0</div>
