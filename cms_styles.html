@@ -144,8 +144,34 @@
     box-shadow:var(--shadow);
     padding:16px;
   }
+  .card-head{
+    font-weight:700;
+    font-size:14px;
+    color:#1f2937;
+  }
+  .card-head + .card-body{
+    margin-top:12px;
+  }
   .card-title{
     font-weight:700; margin-bottom:8px;
+  }
+  .dash-week-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:16px;
+    margin-top:16px;
+  }
+  .dash-week-grid .card{
+    display:flex;
+    flex-direction:column;
+  }
+  .dash-week-grid .card-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+  }
+  .dash-week-grid .card-body .tbl{
+    flex:1;
   }
   .two-col{
     display:grid; grid-template-columns:1fr 1fr; gap:16px;
@@ -262,6 +288,7 @@
   @media (max-width: 720px){
     .app{ grid-template-columns: 1fr; }
     #menu{ position:relative; top:auto; max-height:none; }
+    .dash-week-grid{ grid-template-columns:1fr; }
   }
 
   /* ================== ACCESSIBILITY ================== */
