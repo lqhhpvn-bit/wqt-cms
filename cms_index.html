@@ -6,7 +6,7 @@
     <title>Web Quản Trị</title>
     <?!= include('cms_styles'); ?>
   </head>
-  <body>
+  <body class="auth-required">
     <!-- TOPBAR -->
     <header class="topbar">
       <div class="brand">WQT — Quản trị</div>
@@ -22,7 +22,6 @@
           <div class="avatar">W</div>
           <div class="meta">
             <div class="name">Web Quản Trị</div>
-            <div class="sub">v1.0 — Sidebar</div>
           </div>
         </div>
 
@@ -36,55 +35,78 @@
         <section id="view-dashboard" class="view">
           <h2>Tổng quan</h2>
 
-          <!-- KPI ROW 1 -->
-          <div class="kpi-grid">
-            <div class="kpi">
-              <div class="kpi-title">Quỹ vốn</div>
-              <div class="kpi-value" id="kpi_fund">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Tổng số tiền vay</div>
-              <div class="kpi-value" id="kpi_amount">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Quỹ còn lại</div>
-              <div class="kpi-value" id="kpi_fund_left">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Gốc đã thu</div>
-              <div class="kpi-value" id="kpi_paid_goc">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Lãi đã thu</div>
-              <div class="kpi-value" id="kpi_paid_lai">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Phí đã thu</div>
-              <div class="kpi-value" id="kpi_paid_phi">0</div>
-            </div>
-          </div>
-
-          <!-- KPI ROW 2 -->
-          <div class="kpi-grid">
-            <div class="kpi">
-              <div class="kpi-title">Tổng số KH</div>
-              <div class="kpi-value" id="kpi_cus_total">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">KH đang vay</div>
-              <div class="kpi-value" id="kpi_cus_active">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">Tổng số HĐ</div>
-              <div class="kpi-value" id="kpi_loans">0</div>
-            </div>
-            <div class="kpi">
-              <div class="kpi-title">HĐ active</div>
-              <div class="kpi-value">
-                <span id="kpi_loans_active" class="chip pulse green">0</span>
+          <div class="dashboard-top">
+            <div id="dashboard_kpis" class="dashboard-kpis">
+              <div class="kpi-group">
+                <div class="kpi-group-title">Nguồn vốn & Thu</div>
+                <div class="kpi-grid compact">
+                  <div class="kpi">
+                    <div class="kpi-title">Quỹ vốn</div>
+                    <div class="kpi-value" id="kpi_fund">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Tổng số tiền vay</div>
+                    <div class="kpi-value" id="kpi_amount">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Quỹ còn lại</div>
+                    <div class="kpi-value" id="kpi_fund_left">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Gốc đã thu</div>
+                    <div class="kpi-value" id="kpi_paid_goc">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Lãi đã thu</div>
+                    <div class="kpi-value" id="kpi_paid_lai">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Phí đã thu</div>
+                    <div class="kpi-value" id="kpi_paid_phi">0</div>
+                  </div>
+                </div>
+              </div>
+              <div class="kpi-group">
+                <div class="kpi-group-title">Hợp đồng & Khách hàng</div>
+                <div class="kpi-grid compact">
+                  <div class="kpi">
+                    <div class="kpi-title">Tổng số KH</div>
+                    <div class="kpi-value" id="kpi_cus_total">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">KH đang vay</div>
+                    <div class="kpi-value" id="kpi_cus_active">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">Tổng số HĐ</div>
+                    <div class="kpi-value" id="kpi_loans">0</div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">HĐ active</div>
+                    <div class="kpi-value">
+                      <span id="kpi_loans_active" class="chip pulse green">0</span>
+                    </div>
+                  </div>
+                  <div class="kpi">
+                    <div class="kpi-title">HĐ inactive</div>
+                    <div class="kpi-value" id="kpi_loans_inactive">0</div>
+                  </div>
+                </div>
               </div>
             </div>
+            <aside class="dashboard-side">
+              <div class="card">
+                <div class="card-head">5 lần thanh toán gần nhất</div>
+                <div class="card-body">
+                  <table class="tbl tight">
+                    <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th></tr></thead>
+                    <tbody id="dash_recent_payments"></tbody>
+                  </table>
+                </div>
+              </div>
+            </aside>
           </div>
+          <div id="dashboard_kpis_hidden" class="alert info hidden">KPI đang tắt. Vào tab <b>Cấu hình</b> để bật hiển thị.</div>
 
           <!-- Controls for “this week” sections -->
           <div class="row align-right">
@@ -191,8 +213,6 @@
                 <div>
                   <div class="row">
                     <input id="slip_mahd" class="input" placeholder="Nhập Mã HĐ" />
-                    <label>Ngày tham chiếu</label>
-                    <input id="slip_refdate" type="date" class="input" />
                     <label>Kỳ</label>
                     <select id="slip_k_select" class="input">
                       <option value="">(Tự động)</option>
@@ -290,37 +310,150 @@
                 </div>
               </div>
 
-              <!-- Lịch sử theo Mã HĐ -->
-              <div class="card">
-                <div class="card-head">Lịch sử thanh toán</div>
-                <div class="card-body">
-                  <div class="row">
-                    <input id="hist_mahd" class="input" placeholder="Nhập Mã HĐ..." />
-                    <button id="hist_load" class="btn">Tải lịch sử</button>
-                  </div>
-                  <div class="muted m8" id="hist_info">—</div>
-                  <table class="tbl">
-                    <thead><tr><th>Ngày</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>PaymentID</th></tr></thead>
-                    <tbody id="hist_rows"></tbody>
-                  </table>
-                  <div class="muted m8" id="hist_sum">—</div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
 
-        <!-- ========== PAY HISTORY (placeholder) ========== -->
+        <!-- ========== PAY HISTORY ========== -->
         <section id="view-payhistory" class="view hidden">
-          <h2>Lịch sử thanh toán (theo bộ lọc tuỳ chọn)</h2>
-          <div class="alert">Sẽ mở rộng sau khi chốt bộ lọc.</div>
+          <h2>Lịch sử thanh toán</h2>
+
+          <div class="card">
+            <div class="card-head">Bộ lọc</div>
+            <div class="card-body">
+              <div class="row wrap">
+                <input id="hist_mahd" class="input" placeholder="Mã HĐ (tuỳ chọn)" />
+                <label>Từ ngày</label>
+                <input id="hist_from" type="date" class="input" />
+                <label>Đến ngày</label>
+                <input id="hist_to" type="date" class="input" />
+                <label>Loại</label>
+                <select id="hist_type" class="input">
+                  <option value="">Tất cả</option>
+                  <option value="gốc">Gốc</option>
+                  <option value="lãi">Lãi</option>
+                  <option value="phí">Phí</option>
+                </select>
+                <button id="hist_load" class="btn">Tải lịch sử</button>
+              </div>
+              <div class="muted m8" id="hist_info">—</div>
+            </div>
+          </div>
+
+          <div class="card m16">
+            <div class="card-head">Chi tiết thanh toán</div>
+            <div class="card-body">
+              <table class="tbl">
+                <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>PaymentID</th></tr></thead>
+                <tbody id="hist_rows"></tbody>
+              </table>
+              <div class="muted m16" id="hist_sum">—</div>
+            </div>
+          </div>
         </section>
 
         <!-- ========== CRM ========== -->
         <section id="view-crm" class="view hidden">
-          <!-- (giữ nguyên toàn bộ nội dung CRM như bạn gửi) -->
-          <!-- ... dán y như bản của bạn (đã có ở trên) ... -->
-          <!-- Vì message giới hạn, mình đã giữ nguyên không thay đổi phần CRM -->
+          <h2>CRM</h2>
+          <div class="crm-columns">
+            <div class="crm-col">
+              <div class="card">
+                <div class="card-head">Nhật ký tương tác</div>
+                <div class="card-body">
+                  <input id="crm_interaction_id" type="hidden" />
+                  <div class="row wrap">
+                    <label>ID Khách</label><input id="crm_interaction_customer" class="input" />
+                    <label>Ngày</label><input id="crm_interaction_date" type="date" class="input" />
+                    <label>Kênh</label><input id="crm_interaction_channel" class="input" />
+                    <label>Nhân viên</label><input id="crm_interaction_staff" class="input" />
+                    <label>Tag</label><input id="crm_interaction_tag" class="input" />
+                  </div>
+                  <textarea id="crm_interaction_content" class="input" placeholder="Nội dung trao đổi..."></textarea>
+                </div>
+                <div class="card-foot">
+                  <button id="crm_interaction_clear" class="btn">Làm mới</button>
+                  <button id="crm_interaction_delete" class="btn danger">Xoá</button>
+                  <div class="spacer"></div>
+                  <button id="crm_interaction_save" class="btn primary">Lưu tương tác</button>
+                </div>
+              </div>
+
+              <div class="card m16">
+                <div class="card-head">Lịch sử tương tác</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>ID</th><th>ID Khách</th><th>Ngày</th><th>Kênh</th><th>Nhân viên</th><th>Tag</th><th>Nội dung</th><th></th></tr></thead>
+                    <tbody id="crm_interaction_rows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="crm-col">
+              <div class="card">
+                <div class="card-head">Công việc</div>
+                <div class="card-body">
+                  <input id="crm_task_id" type="hidden" />
+                  <div class="row wrap">
+                    <label>ID Khách</label><input id="crm_task_customer" class="input" />
+                    <label>Tiêu đề</label><input id="crm_task_title" class="input" />
+                    <label>Hạn</label><input id="crm_task_due" type="date" class="input" />
+                    <label>Trạng thái</label>
+                    <select id="crm_task_status" class="input">
+                      <option value="Mới">Mới</option>
+                      <option value="Đang xử lý">Đang xử lý</option>
+                      <option value="Hoàn tất">Hoàn tất</option>
+                    </select>
+                    <label>Phụ trách</label><input id="crm_task_owner" class="input" />
+                  </div>
+                  <textarea id="crm_task_note" class="input" placeholder="Ghi chú"></textarea>
+                </div>
+                <div class="card-foot">
+                  <button id="crm_task_clear" class="btn">Làm mới</button>
+                  <button id="crm_task_delete" class="btn danger">Xoá</button>
+                  <div class="spacer"></div>
+                  <button id="crm_task_save" class="btn primary">Lưu công việc</button>
+                </div>
+              </div>
+
+              <div class="card m16">
+                <div class="card-head">Danh sách công việc</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>TaskID</th><th>ID Khách</th><th>Tiêu đề</th><th>Hạn</th><th>Trạng thái</th><th>Phụ trách</th><th>Ghi chú</th><th></th></tr></thead>
+                    <tbody id="crm_task_rows"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card m16">
+                <div class="card-head">Đánh giá khách hàng</div>
+                <div class="card-body">
+                  <div class="row wrap">
+                    <label>ID Khách</label><input id="crm_rating_customer" class="input" />
+                    <label>Điểm</label><input id="crm_rating_score" class="input" />
+                    <label>Tiêu chí</label><input id="crm_rating_criteria" class="input" />
+                  </div>
+                  <textarea id="crm_rating_note" class="input" placeholder="Nhận xét"></textarea>
+                </div>
+                <div class="card-foot">
+                  <button id="crm_rating_save" class="btn primary">Lưu đánh giá</button>
+                  <div class="spacer"></div>
+                  <button id="crm_rating_reload" class="btn">Tải theo ID Khách</button>
+                </div>
+              </div>
+
+              <div class="card m16">
+                <div class="card-head">Lịch sử đánh giá</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>ID Khách</th><th>Điểm</th><th>Tiêu chí</th><th>Nhận xét</th><th>Cập nhật</th></tr></thead>
+                    <tbody id="crm_rating_rows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- ========== REPORTS ========== -->
@@ -355,9 +488,15 @@
           <div class="card">
             <div class="card-head">Thiết lập chung</div>
             <div class="card-body">
-              <div class="row">
+              <div class="row wrap">
                 <label>Quỹ vốn</label><input id="cfg_fund" class="input" />
                 <label>Loại thanh toán</label><input id="cfg_paytypes" class="input" placeholder="gốc,lãi,phí" />
+              </div>
+              <div class="m12">
+                <label class="checkbox-inline">
+                  <input id="cfg_show_kpi" type="checkbox" />
+                  <span>Hiển thị KPI trên trang Tổng quan</span>
+                </label>
               </div>
             </div>
             <div class="card-foot">
@@ -407,7 +546,7 @@
               </div>
             </div>
           </div>
-          <div class="grid-2">
+          <div class="grid-2 tg-columns">
             <div class="card">
               <div class="card-head">Danh sách nhóm</div>
               <div class="card-body">
@@ -417,31 +556,31 @@
                 </table>
               </div>
             </div>
-            <div class="card">
-              <div class="card-head">Thêm nhóm</div>
-              <div class="card-body">
-                <input id="tg_name" class="input" placeholder="Tên nhóm" />
-                <input id="tg_chat" class="input" placeholder="chat_id" />
-                <input id="tg_purpose" class="input" placeholder="Mục đích (ví dụ: nhắc việc, phiếu...)" />
-              </div>
-              <div class="card-foot">
-                <button class="btn primary" onclick="tgAddGroup()">Thêm</button>
-              </div>
-
-                <div class="m16"></div>
-                <div class="card">
-                  <div class="card-head">Gửi thử</div>
-                  <div class="card-body">
-                    <div class="row">
-                      <label>Chọn nhóm</label>
-                      <select id="tg_sel" class="input"></select>
-                    </div>
-                    <textarea id="tg_text" class="input" placeholder="Nội dung tin nhắn..."></textarea>
-                    <div class="card-foot">
-                      <button class="btn" onclick="tgSendText()">Gửi text</button>
-                    </div>
-                  </div>
+            <div class="tg-stack">
+              <div class="card">
+                <div class="card-head">Thêm nhóm</div>
+                <div class="card-body">
+                  <input id="tg_name" class="input" placeholder="Tên nhóm" />
+                  <input id="tg_chat" class="input" placeholder="chat_id" />
+                  <input id="tg_purpose" class="input" placeholder="Mục đích (ví dụ: nhắc việc, phiếu...)" />
                 </div>
+                <div class="card-foot">
+                  <button class="btn primary" onclick="tgAddGroup()">Thêm</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">Gửi thử</div>
+                <div class="card-body">
+                  <div class="row wrap">
+                    <label>Chọn nhóm</label>
+                    <select id="tg_sel" class="input"></select>
+                  </div>
+                  <textarea id="tg_text" class="input" placeholder="Nội dung tin nhắn..."></textarea>
+                </div>
+                <div class="card-foot">
+                  <button class="btn" onclick="tgSendText()">Gửi text</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -539,6 +678,7 @@
       </main>
     </div>
 
+    <?!= include('cms_login'); ?>
     <?!= include('cms_scripts'); ?>
   </body>
 </html>
