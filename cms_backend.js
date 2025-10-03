@@ -21,6 +21,15 @@ function _endOfPrevDay_(d){ var x=new Date(d); x.setDate(x.getDate()-1); x.setHo
 function _addMonths_(d, n){ var x=new Date(d); x.setMonth(x.getMonth()+Number(n||0)); return x; }
 function _monthsDiff_(from, to){ return (to.getFullYear()-from.getFullYear())*12 + (to.getMonth()-from.getMonth()); }
 function _toNum_(v){ var n = Number((v||'').toString().replace(/[^\d\.\-]/g,'')); return isNaN(n)?0:n; }
+function _fmtMoney_(n){
+  var num = Number(n||0);
+  if (isNaN(num)) num = 0;
+  if (typeof num.toLocaleString === 'function'){
+    try { return num.toLocaleString('vi-VN'); } catch(e){ return num.toLocaleString(); }
+  }
+  var s = String(Math.round(num));
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 /** Helper: chuyển giá trị ô thành Date (nếu có) */
 function toDate_(v){
   if (!v) return null;
@@ -97,6 +106,20 @@ function getVisibleMenusForMe(allKeys){
   var arr = roles[me] || roles['*'] || allKeys || [];
   return (arr.length ? arr : allKeys);
 }
+function getVisibleMenusForSession(payload){
+  payload = payload || {};
+  var keys = payload.keys || payload.allKeys || [];
+  try {
+    var ctx = _hybridGuard_(payload);
+    if (ctx.mode === 'local'){
+      return (ctx.menus && ctx.menus.length) ? ctx.menus : keys;
+    }
+    return getVisibleMenusForMe(keys);
+  } catch(e){
+    if (payload.silent) return [];
+    throw e;
+  }
+}
 function mustHave(menuKey){
   var allowed = getVisibleMenusForMe([]);
   if (allowed.indexOf(menuKey)===-1) throw new Error('Bạn không có quyền truy cập mục: '+menuKey);
@@ -156,6 +179,33 @@ function admin_setLocalUserPassword(user, newPassword){
   return admin_upsertLocalUser(user, null, newPassword, null, null);
 }
 
+function admin_listLocalUsers(){
+  _cms_guard_();
+  var s=_accSheet_(); var H=_accMap_(s.headers);
+  var iUser=H['User'], iDisp=H['Display'], iMenus=H['Menus'], iAct=H['Active'];
+  var rows=(s.rows||[]).map(function(r){
+    return {
+      user: r[iUser],
+      display: r[iDisp] || r[iUser],
+      menus: String(r[iMenus]||'').split(',').map(function(x){ return x.trim(); }).filter(Boolean),
+      active: String(r[iAct]).toLowerCase() !== 'false'
+    };
+  });
+  return { ok:true, rows:rows, allMenus: (typeof MENU_CONFIG!=='undefined' ? MENU_CONFIG.map(function(m){return m.key;}) : []) };
+}
+function admin_deleteLocalUser(user){
+  _cms_guard_();
+  user=String(user||'').trim(); if(!user) throw new Error('Thiếu user');
+  var s=_accSheet_(); var H=_accMap_(s.headers); var iUser=H['User'];
+  for (var i=0;i<s.rows.length;i++){
+    if (String(s.rows[i][iUser]||'').trim().toLowerCase()===user.toLowerCase()){
+      s.sheet.deleteRow(i+2);
+      return { ok:true, user:user };
+    }
+  }
+  return { ok:false, message:'Không tìm thấy user' };
+}
+
 /** Local login → token */
 function local_login(user, password){
   user=String(user||'').trim(); if(!user) throw new Error('Thiếu user');
@@ -183,6 +233,17 @@ function local_logout(token){
   _sessCache_().remove('SESS::'+token);
   return {ok:true};
 }
+function local_login_api(payload){
+  payload = payload || {};
+  var user = payload.user || payload.username || payload.account || '';
+  var pass = payload.password || payload.pass || payload.pw || '';
+  return local_login(user, pass);
+}
+function local_logout_api(payload){
+  payload = payload || {};
+  var token = payload.token || payload.session || '';
+  return local_logout(token);
+}
 function _sessionFromToken_(token){
   if(!token) return null;
   var txt=_sessCache_().get('SESS::'+token); if(!txt) return null;
@@ -191,20 +252,25 @@ function _sessionFromToken_(token){
 
 /** Hybrid guard: Google SSO hoặc token local */
 function _hybridGuard_(payload){
-  try{ _cms_guard_(); return {mode:'google', principal: _me_()}; }catch(e){}
-  var token = payload && (payload.session || payload.token);
+  payload = payload || {};
+  if (_allowGoogleSso_()){
+    try{ _cms_guard_(); return {mode:'google', principal: _me_(), menus: getVisibleMenusForMe([])}; }catch(e){}
+  }
+  var token = payload.session || payload.token;
   var sess = _sessionFromToken_(token);
   if (sess && Array.isArray(sess.menus)) return {mode:'local', principal: sess.user, menus: sess.menus};
   throw new Error('Bạn chưa đăng nhập hoặc không có quyền.');
 }
 function mustHaveHybrid(payload, menuKey){
   var ctx=_hybridGuard_(payload||{});
-  if (ctx.mode==='local'){
-    if (!ctx.menus || ctx.menus.indexOf(menuKey)===-1) throw new Error('Không có quyền vào mục: '+menuKey);
-  } else {
-    try{ mustHave(menuKey); }catch(e){ /* nếu chưa set role theo email, cho qua */ }
+  if (menuKey){
+    if (ctx.mode==='local'){
+      if (!ctx.menus || ctx.menus.indexOf(menuKey)===-1) throw new Error('Không có quyền vào mục: '+menuKey);
+    } else {
+      try{ mustHave(menuKey); }catch(e){ /* nếu chưa set role theo email, cho qua */ }
+    }
   }
-  return true;
+  return ctx;
 }
 
 /** Map tableKey → menuKey */
@@ -678,9 +744,12 @@ function getRemindersToday_api(payload){ mustHaveHybrid(payload, 'loanmgr'); ret
 function getAppConfig(){
   var p = _getProps_();
   var payTypesCsv = p.getProperty('PAY_TYPES') || 'gốc,lãi,phí';
+  var showKpi = String(p.getProperty('SHOW_KPI') || 'true').toLowerCase();
   return {
     fund: Number(p.getProperty('FUND') || 0),
     payTypes: payTypesCsv.split(',').map(s=>String(s||'').trim()).filter(Boolean),
+    showDashboardKpis: showKpi !== 'false' && showKpi !== '0' && showKpi !== 'no',
+    allowGoogleSso: _allowGoogleSso_(),
     telegram: {
       bot   : p.getProperty('TG_BOT')  || '',
       chatId: p.getProperty('TG_CHAT') || ''
@@ -696,6 +765,9 @@ function setAppConfig(payload){
   if (typeof payload.payTypes !== 'undefined'){
     var csv = Array.isArray(payload.payTypes) ? payload.payTypes.join(',') : String(payload.payTypes||'');
     p.setProperty('PAY_TYPES', csv);
+  }
+  if (typeof payload.showDashboardKpis !== 'undefined'){
+    p.setProperty('SHOW_KPI', payload.showDashboardKpis ? 'true' : 'false');
   }
   if (payload.telegram){
     if (typeof payload.telegram.bot !== 'undefined'){ p.setProperty('TG_BOT', String(payload.telegram.bot||'')); }
@@ -746,7 +818,8 @@ function getDashboardKpis_api(payload){
     totalCustomers: totalCustomers,
     activeCustomers: Object.keys(activeCusSet).length,
     totalLoans: loans.length,
-    activeLoans: activeLoans.length
+    activeLoans: activeLoans.length,
+    inactiveLoans: Math.max(loans.length - activeLoans.length, 0)
   };
 }
 
@@ -845,7 +918,66 @@ function importFromFile_api(payload){
   return { ok:true, mode:mode, updated:updated, added:added, skipped:skipped };
 }
 
+function getImportTemplate(payload){
+  payload = payload || {};
+  var tableKey = payload.tableKey || payload.tbl;
+  if (!tableKey) throw new Error('Thiếu tableKey.');
+  var ctx = mustHaveHybrid(payload, _menuKeyForTable_(tableKey));
+  var cfg = _cms_getSheet_(tableKey);
+  var sh = cfg.sheet;
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 1) throw new Error('Sheet nguồn chưa có tiêu đề.');
+  var headers = sh.getRange(1,1,1,lastCol).getDisplayValues()[0];
+  var name = 'Import ' + (cfg.label || tableKey) + ' ' + _ymd_(new Date());
+  var ss = SpreadsheetApp.create(name);
+  var dst = ss.getSheets()[0];
+  dst.getRange(1,1,1,headers.length).setValues([headers]);
+  dst.setFrozenRows(1);
+  return { ok:true, fileId:ss.getId(), url:ss.getUrl(), id:ss.getId(), headers:headers, owner:ctx.principal };
+}
+
+function importCustomersFromFile(payload){
+  payload = payload || {};
+  payload.tableKey = 'CUSTOMERS';
+  return importFromFile_api(payload);
+}
+
+function importLoansFromFile(payload){
+  payload = payload || {};
+  payload.tableKey = 'LOANS';
+  return importFromFile_api(payload);
+}
+
+function importPaymentsFromFile(payload){
+  payload = payload || {};
+  payload.tableKey = 'PAYMENTS';
+  return importFromFile_api(payload);
+}
+
 /** ===================== USER PREFS & ĐỔI MẬT KHẨU ===================== */
+function _localPrefsKey_(user){ return 'LOCAL_PREFS::'+String(user||'').trim().toLowerCase(); }
+function _getLocalPrefs_(user){
+  if (!user) return { timeFormat:'vi-VN', font:'system' };
+  var raw = _getProps_().getProperty(_localPrefsKey_(user));
+  if (!raw) return { timeFormat:'vi-VN', font:'system' };
+  try {
+    var obj = JSON.parse(raw);
+    return { timeFormat: obj.timeFormat || 'vi-VN', font: obj.font || 'system' };
+  } catch(e){
+    return { timeFormat:'vi-VN', font:'system' };
+  }
+}
+function _setLocalPrefs_(user, obj){
+  user = String(user||'').trim();
+  if (!user) throw new Error('Thiếu tài khoản.');
+  var prefs = obj || {};
+  var out = {
+    timeFormat: prefs.timeFormat || 'vi-VN',
+    font: prefs.font || 'system'
+  };
+  _getProps_().setProperty(_localPrefsKey_(user), JSON.stringify(out));
+  return out;
+}
 function _userProps_(){ return PropertiesService.getUserProperties(); }
 function getMyPrefs(){
   var up = _userProps_();
@@ -877,6 +1009,55 @@ function changeMyPassword(oldPw, newPw){
   row[iSalt]=newSalt; row[iHash]=newHash;
   s.sheet.getRange(rowIdx+2,1,1,s.headers.length).setValues([row]);
   return { ok:true };
+}
+function _changeLocalPassword_(user, oldPw, newPw){
+  user = String(user||'').trim();
+  if (!user) throw new Error('Thiếu tài khoản.');
+  oldPw = String(oldPw||''); newPw = String(newPw||'');
+  if (!newPw) throw new Error('Mật khẩu mới rỗng.');
+  var s=_accSheet_(); var H=_accMap_(s.headers);
+  var iUser=H['User'], iHash=H['PasswordHash'], iSalt=H['Salt'];
+  var rowIdx=-1;
+  for (var i=0;i<s.rows.length;i++){
+    if (String(s.rows[i][iUser]||'').trim().toLowerCase()===user.toLowerCase()){ rowIdx=i; break; }
+  }
+  if (rowIdx===-1) throw new Error('Không tìm thấy tài khoản nội bộ: '+user);
+  var row=s.rows[rowIdx];
+  var salt=row[iSalt]||''; var expect=row[iHash]||''; var got=_hash256b64_(oldPw+salt);
+  if (got!==expect) throw new Error('Mật khẩu hiện tại không đúng.');
+  var newSalt=Utilities.getUuid(); var newHash=_hash256b64_(newPw+newSalt);
+  row[iSalt]=newSalt; row[iHash]=newHash;
+  s.sheet.getRange(rowIdx+2,1,1,s.headers.length).setValues([row]);
+  return { ok:true };
+}
+
+function getMyPrefs_api(payload){
+  var ctx = mustHaveHybrid(payload, 'account');
+  if (ctx.mode === 'local'){
+    return _getLocalPrefs_(ctx.principal);
+  }
+  return getMyPrefs();
+}
+
+function setMyPrefs_api(payload){
+  payload = payload || {};
+  var ctx = mustHaveHybrid(payload, 'account');
+  var prefs = { timeFormat: payload.timeFormat, font: payload.font };
+  if (ctx.mode === 'local'){
+    return _setLocalPrefs_(ctx.principal, prefs);
+  }
+  return setMyPrefs(prefs);
+}
+
+function changeMyPassword_api(payload){
+  payload = payload || {};
+  var ctx = mustHaveHybrid(payload, 'account');
+  var oldPw = payload.oldPw || payload.current || payload.oldPassword || '';
+  var newPw = payload.newPw || payload.password || payload.newPassword || '';
+  if (ctx.mode === 'local'){
+    return _changeLocalPassword_(ctx.principal, oldPw, newPw);
+  }
+  return changeMyPassword(oldPw, newPw);
 }
 
 /** ===================== TELEGRAM (Text/Ảnh) + GROUPS ===================== */
@@ -945,6 +1126,81 @@ function tg_sendToGroup(payload){
   if (imageB64) return tg_sendImageB64({chatId:chatId, imageB64:imageB64, caption:(payload.caption||'')});
   if (text) return tg_sendText({chatId:chatId, text:text});
   throw new Error('Thiếu nội dung gửi (text hoặc imageB64).');
+}
+
+function sendSlipToTelegram(payload){
+  payload = payload || {};
+  var ctx = mustHaveHybrid(payload, 'loanmgr');
+  var mahd = String(payload.mahd||'').trim();
+  if (!mahd) throw new Error('Thiếu Mã HĐ');
+
+  var slip = (payload.fromISO || payload.toISO)
+    ? getLoanSlipRange(mahd, payload.fromISO || null, payload.toISO || null)
+    : getLoanSlip(mahd, payload.refISO || null, payload.k);
+
+  if (!slip || slip.ok === false){
+    return slip || { ok:false, message:'Không tạo được phiếu cho hợp đồng '+mahd };
+  }
+
+  var lines = [];
+  var header = '<b>Phiếu thanh toán</b>';
+  if (slip.period && slip.period.k){ header = '<b>Phiếu thanh toán — Kỳ '+slip.period.k+'</b>'; }
+  else if (slip.range){ header = '<b>Phiếu thanh toán — Khoảng ngày</b>'; }
+  lines.push(header);
+  if (slip.loan){
+    lines.push('Hợp đồng: '+(slip.loan.id||'')+' — '+(slip.loan.name||''));
+  }
+
+  var duePrincipal=0, dueInterest=0, paidPrincipal=0, paidInterest=0, remainPrincipal=0, remainInterest=0;
+  if (slip.period){
+    lines.push('Từ '+(slip.period.from||'')+' đến '+(slip.period.to||''));
+    duePrincipal = Number(slip.period.principalDue||0);
+    dueInterest  = Number(slip.period.interestDue||0);
+    paidPrincipal = Number((slip.paid&&slip.paid.principal)||0);
+    paidInterest  = Number((slip.paid&&slip.paid.interest)||0);
+    remainPrincipal = Number((slip.remaining&&slip.remaining.principal)||0);
+    remainInterest  = Number((slip.remaining&&slip.remaining.interest)||0);
+  } else if (slip.range){
+    lines.push('Từ '+(slip.range.from||'')+' đến '+(slip.range.to||''));
+    duePrincipal = Number((slip.due&&slip.due.principal)||0);
+    dueInterest  = Number((slip.due&&slip.due.interest)||0);
+    paidPrincipal = Number((slip.paid&&slip.paid.principal)||0);
+    paidInterest  = Number((slip.paid&&slip.paid.interest)||0);
+    remainPrincipal = Math.max(0, duePrincipal - paidPrincipal);
+    remainInterest  = Math.max(0, dueInterest - paidInterest);
+  }
+
+  var totalDue = duePrincipal + dueInterest;
+  var totalPaid = paidPrincipal + paidInterest;
+  var totalRemain = Math.max(0, totalDue - totalPaid);
+
+  lines.push('Gốc phải thu: ' + _fmtMoney_(duePrincipal));
+  lines.push('Lãi phải thu: ' + _fmtMoney_(dueInterest));
+  lines.push('Đã thu gốc/lãi: ' + _fmtMoney_(paidPrincipal) + ' / ' + _fmtMoney_(paidInterest));
+  lines.push('Còn phải thu: ' + _fmtMoney_(totalRemain));
+
+  var text = lines.join('\n');
+  var tgPayload = {
+    session: payload.session,
+    chatId: payload.chatId,
+    text: text
+  };
+  if (!tgPayload.chatId && payload.purpose){
+    // cố gắng map sang group theo purpose (dùng tiện ích có sẵn)
+    try {
+      var g = _getTgGroups_().find(function(x){ return String(x.purpose||'').toLowerCase() === String(payload.purpose||'').toLowerCase(); });
+      if (g) tgPayload.chatId = g.chatId;
+    } catch(e){}
+  }
+  var tgRes = tg_sendText(tgPayload);
+  var ok = tgRes && tgRes.ok !== false;
+  return {
+    ok: ok,
+    k: (slip.period && slip.period.k) || null,
+    telegram: tgRes,
+    message: text,
+    sender: ctx && (ctx.display || ctx.principal || '')
+  };
 }
 
 /** ===================== CRM ===================== */
@@ -1029,7 +1285,9 @@ function crm_getRatingsByCustomer(payload){
 /** ===================== WHOAMI ===================== */
 function include(filename) { return HtmlService.createHtmlOutputFromFile(filename).getContent(); }
 function whoami(payload){
-  try { _cms_guard_(); return { ok:true, mode:'google', principal:_me_(), menus:getVisibleMenusForMe([]) }; } catch(e){}
+  if (_allowGoogleSso_()){
+    try { _cms_guard_(); return { ok:true, mode:'google', principal:_me_(), menus:getVisibleMenusForMe([]) }; } catch(e){}
+  }
   var token = payload && (payload.session || payload.token);
   var sess  = _sessionFromToken_(token);
   if (sess) return { ok:true, mode:'local', principal: sess.user, display: sess.display, menus: sess.menus };
