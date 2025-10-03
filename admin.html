@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Web Admin (Quản lý SCHEMA)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --pad:12px; --radius:12px; --indigo:#4f46e5; --bg:#f6f7fb; --muted:#6b7280; }
+    *{ box-sizing:border-box }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:#0f172a; }
+    header { background:#fff; border-bottom:1px solid #e5e7eb; padding:16px 20px; }
+    h1 { margin:0; font-size:22px; font-weight:800; letter-spacing:.2px; }
+    .wrap { max-width:1100px; margin:0 auto; padding:18px; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:var(--radius); padding:var(--pad); margin-bottom:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .col { flex:1; min-width:220px; }
+    label { display:block; font-size:12px; color:#475569; margin:4px 0 6px; }
+    input, select, textarea { width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; }
+    input:focus, select:focus, textarea:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(79,70,229,.15); outline:none; }
+    .chk { display:flex; align-items:center; gap:8px; margin-top:26px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; background:#111827; color:#fff; cursor:pointer; font-weight:600; }
+    button.indigo { background:var(--indigo); border-color:var(--indigo); }
+    button.ghost  { background:#fff; color:#111; }
+    button:hover { opacity:.95; transform: translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { padding:10px 8px; border-bottom:1px solid #eef2f7; white-space:nowrap; text-align:left; }
+    thead th { background:#fafafa; position:sticky; top:0; z-index:1; }
+    tr:hover { background:#fafafa; }
+    .muted { color:var(--muted); font-size:12px; }
+  </style>
+</head>
+<body>
+  <header><h1>SCHEMA (Quản lý cấu trúc dữ liệu)</h1></header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <label>Bảng</label>
+          <select id="tbl"></select>
+          <div class="muted" id="tblNote" style="margin-top:6px"></div>
+        </div>
+        <div class="col">
+          <label>Trường (Field)</label>
+          <input id="field" placeholder="Ví dụ: Address" />
+        </div>
+        <div class="col">
+          <label>Nhãn hiển thị (Label)</label>
+          <input id="label" placeholder="Ví dụ: Địa chỉ" />
+        </div>
+        <div class="col">
+          <label>Kiểu dữ liệu (Type)</label>
+          <select id="type">
+            <option value="string">Chuỗi ký tự</option>
+            <option value="number">Số</option>
+            <option value="date">Ngày</option>
+            <option value="enum">Lựa chọn (enum)</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Giá trị lựa chọn (Enum, cách nhau dấu phẩy)</label>
+          <input id="enum" placeholder="VND,USD,LAK" />
+        </div>
+        <div class="col">
+          <label>Mặc định (Default)</label>
+          <input id="def" placeholder="" />
+        </div>
+        <div class="col chk">
+          <input id="req" type="checkbox" />
+          <label for="req" style="margin:0">Bắt buộc</label>
+        </div>
+        <div class="col" style="flex:0 0 180px">
+          <label>&nbsp;</label>
+          <button class="indigo" id="btnAdd">+ Thêm cột</button>
+        </div>
+      </div>
+      <div class="muted" id="msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Danh sách cột</h3>
+        <button id="btnApply" class="indigo">Áp dụng Schema → Sheet</button>
+      </div>
+      <div style="overflow:auto; max-height:60vh">
+        <table>
+          <thead>
+            <tr>
+              <th>Thứ tự</th>
+              <th>Trường</th>
+              <th>Nhãn</th>
+              <th>Kiểu</th>
+              <th>Bắt buộc</th>
+              <th>Enum</th>
+              <th>Mặc định</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.onerror = (m)=>alert('Lỗi JS: '+m);
+
+    const CSRF   = '<?= (typeof csrf  !== "undefined" && csrf)  ? csrf  : "" ?>';
+    const UI_CFG = <?!= JSON.stringify((typeof uiCfg !== "undefined" && uiCfg) ? uiCfg : { pageSize:20 }) ?>;
+
+    let SCHEMA = null;
+    let current = 'CUSTOMERS';
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadSchema();
+      document.getElementById('btnAdd').onclick = addField;
+      document.getElementById('btnApply').onclick = ()=>{
+        google.script.run.withSuccessHandler(()=>{ alert('Đã áp dụng Schema sang các sheet dữ liệu.'); loadSchema(); })
+          .withFailureHandler(showErr).api_schema_apply();
+      };
+    });
+
+    function loadSchema(){
+      google.script.run.withSuccessHandler(defs=>{
+        SCHEMA = defs;
+        const sel = document.getElementById('tbl'); sel.innerHTML='';
+        Object.keys(defs).forEach(k=>{
+          const o = document.createElement('option');
+          o.value = k; o.textContent = `${k} (${defs[k].sheetName})`;
+          sel.appendChild(o);
+        });
+        if (!SCHEMA[current]) current = Object.keys(SCHEMA)[0];
+        sel.value = current;
+        sel.onchange = ()=>{ current = sel.value; render(); };
+        render();
+      }).withFailureHandler(showErr).api_schema_list();
+    }
+
+    function render(){
+      const tb = document.getElementById('tbody'); tb.innerHTML='';
+      const def = SCHEMA[current];
+      document.getElementById('tblNote').textContent = `Bảng ${current} có ${def.cols.length} cột. Sheet đích: ${def.sheetName}`;
+
+      def.cols.forEach((f, idx)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${idx+1}</td><td>${f}</td><td></td><td></td><td></td><td></td><td></td>`;
+        const tdAct = document.createElement('td');
+
+        if (f !== def.idCol){
+          const btn = document.createElement('button');
+          btn.className = 'ghost'; btn.textContent = 'Xoá';
+          btn.onclick = ()=>{
+            if (!confirm('Xoá cột "'+f+'" khỏi schema?')) return;
+            google.script.run.withSuccessHandler(()=>loadSchema()).withFailureHandler(showErr).api_schema_delete(current, f);
+          };
+          tdAct.appendChild(btn);
+        }
+        tr.appendChild(tdAct); tb.appendChild(tr);
+      });
+
+      document.getElementById('msg').textContent = '';
+      document.getElementById('field').value = '';
+      document.getElementById('label').value = '';
+      document.getElementById('type').value  = 'string';
+      document.getElementById('enum').value  = '';
+      document.getElementById('def').value   = '';
+      document.getElementById('req').checked = false;
+    }
+
+    function addField(){
+      const field = document.getElementById('field').value.trim();
+      const label = document.getElementById('label').value.trim() || field;
+      const type  = document.getElementById('type').value;
+      const ev    = document.getElementById('enum').value.trim();
+      const defv  = document.getElementById('def').value.trim();
+      const req   = document.getElementById('req').checked;
+      if (!field){ alert('Vui lòng nhập tên Trường (Field).'); return; }
+      if (SCHEMA[current].cols.includes(field)){ alert('Cột đã tồn tại trong schema.'); return; }
+
+      google.script.run.withSuccessHandler(()=>{
+        document.getElementById('msg').textContent = 'Đã thêm cột "'+field+'". Nhấn "Áp dụng Schema" để đồng bộ sang sheet.';
+        loadSchema();
+      }).withFailureHandler(showErr).api_schema_add(current, field, label, type, req, ev, defv);
+    }
+
+    function showErr(e){ alert('Lỗi: '+(e && e.message ? e.message : e)); }
+  </script>
+</body>
+</html>

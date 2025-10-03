@@ -1,0 +1,22 @@
+<dialog id="dlg_login" class="modal">
+  <div class="head">Đăng nhập tài khoản nội bộ</div>
+  <div class="body">
+    <div class="row">
+      <div class="col-12">
+        <label>Tài khoản</label>
+        <input id="login_user" />
+      </div>
+      <div class="col-12">
+        <label>Mật khẩu</label>
+        <input id="login_pass" type="password" />
+      </div>
+    </div>
+    <div class="muted" style="margin-top:8px">
+      Bạn cũng có thể đăng nhập Google (nếu email của bạn nằm trong danh sách cho phép).
+    </div>
+  </div>
+  <div class="foot">
+    <button class="btn" onclick="document.getElementById('dlg_login').close()">Đóng</button>
+    <button class="btn primary" id="btn_login_do">Đăng nhập</button>
+  </div>
+</dialog>

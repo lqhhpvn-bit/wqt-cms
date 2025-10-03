@@ -1,0 +1,810 @@
+<script>
+// ========= ENV, MENU, NAV =========
+const RAW_MENU = (typeof serverEnv !== 'undefined' && serverEnv.MENU_CONFIG) ? serverEnv.MENU_CONFIG : [
+  { key:'dashboard',  title:'Tổng quan' },
+  { key:'customers',  title:'Khách hàng' },
+  { key:'loans',      title:'Hợp đồng' },
+  { key:'loanmgr',    title:'Quản lý khoản vay/Thanh toán' },
+  { key:'payhistory', title:'Lịch sử thanh toán' },
+  { key:'crm',        title:'CRM' },
+  { key:'reports',    title:'Báo Cáo' },
+  { key:'settings',   title:'Cấu Hình' },
+  { key:'account',    title:'Cài đặt' }
+];
+// Chuẩn hóa minimal để không vỡ code cũ:
+const MENU = RAW_MENU.map(m => ({
+  key: m.key,
+  title: m.title || m.name || m.key,
+  icon: m.icon || '' // để dành nếu sau này muốn hiện biểu tượng
+}));
+
+
+function renderMenu(){
+  const box = document.getElementById('menu');
+  box.innerHTML = '';
+  MENU.forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'tabbtn';
+    // nếu có icon (text), đặt trước title; có thể dùng emoji hoặc tên icon bạn map sẵn
+    b.innerHTML = m.icon ? `<span class="ico">${m.icon}</span> ${m.title}` : m.title;
+    b.onclick = () => navigate(m.key);
+    b.dataset.key = m.key;
+    box.appendChild(b);
+  });
+}
+
+function navigate(key){ location.hash='#'+key; }
+function currentKey(){ return (location.hash||'#dashboard').replace('#',''); }
+function setActiveTab(key){
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
+}
+function onRoute(){
+  const key = currentKey();
+  const keys = MENU.map(m => m.key); // LẤY TỰ ĐỘNG
+  keys.forEach(k => {
+    const el = document.getElementById('view-' + k);
+    if (el) el.classList.toggle('hidden', k !== key);
+  });
+  setActiveTab(key);
+  // loader theo key (cũ giữ nguyên) — có thể refactor thành map nếu muốn
+  if (key==='dashboard')      loadDashboard();
+  else if (key==='customers') { bindCustomerImports(); loadCustomers(); }
+  else if (key==='loans')     { ensureCustomerDropdown(true); bindLoanImports(); loadLoans(); }
+  else if (key==='loanmgr')   { bindLoanMgr(); loadRemindersToday(); refreshPayTypesFromCfg(); }
+  else if (key==='payhistory'){}
+  else if (key==='settings')  loadSettings();
+  else if (key==='account')   loadAccountPrefs();
+}
+
+
+function applyMenuVisibility(){
+  const keys = Array.from(document.querySelectorAll('.tabbtn')).map(b=>b.dataset.key);
+  google.script.run.withSuccessHandler(v=>{
+    const allowed = new Set(v || keys);
+    document.querySelectorAll('.tabbtn').forEach(b=>{
+      const ok = allowed.has(b.dataset.key);
+      b.style.display = ok ? '' : 'none';
+    });
+  }).getVisibleMenusForMe(keys);
+}
+
+/* ========= Helpers ========= */
+const money = n => Number(n||0).toLocaleString('vi-VN');
+function toNum(s){ return Number(String(s??'').replace(/[^\d\-]/g,'')) || 0; }
+function fmt(v){
+  if (!v) return '';
+  const d=new Date(v);
+  if(!isNaN(d)) return d.toLocaleDateString('vi-VN');
+  return v;
+}
+function toDateInput(v){
+  if(!v) return ''; const d=new Date(v); if(isNaN(d)) return '';
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function addMonths(iso, n){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; d.setMonth(d.getMonth()+Number(n||0)); return toDateInput(d); }
+function hmap(headers){ const m={}; (headers||[]).forEach((h,i)=> m[String(h).trim()]=i); return m; }
+const pick=(row, idx)=> (idx>=0 && idx!=null) ? row[idx] : '';
+function isInThisWeek(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr); if(isNaN(d)) return false;
+  const now = new Date();
+  const first = new Date(now); 
+  const day = first.getDay() || 7;
+  first.setDate(first.getDate() - day + 1);
+  first.setHours(0,0,0,0);
+  const last = new Date(first); last.setDate(first.getDate()+6); last.setHours(23,59,59,999);
+  return d >= first && d <= last;
+}
+
+/* ========= DASHBOARD ========= */
+function loadDashboard(){
+  google.script.run.withSuccessHandler(resLoan=>{
+    const H=hmap(resLoan.headers||[]);
+    const idIdx    = (H['Mã HĐ'] ?? H['MaHD'] ?? 0);
+    const cusIdx   = (H['ID Khách'] ?? H['IDVC'] ?? -1);
+    const nameIdx  = (H['Tên KH'] ?? H['TenKH'] ?? H['Tên'] ?? -1);
+    const amtIdx   = (H['Số tiền vay'] ?? H['Gốc'] ?? H['Principal'] ?? H['Amount'] ?? -1);
+    const startIdx = (H['Ngày giải ngân'] ?? H['Bắt đầu'] ?? H['StartDate'] ?? -1);
+    const statusIdx= (H['Trạng thái'] ?? H['Status'] ?? -1);
+
+    const activeCus = new Set();
+    let totalLoanAmt = 0;
+    const rows = resLoan.rows || [];
+    rows.forEach(r=>{
+      const st = String(pick(r, statusIdx)||'');
+      if (st !== 'Hoàn tất') {
+        const cid = pick(r,cusIdx)||'';
+        if (cid) activeCus.add(cid);
+      }
+      totalLoanAmt += toNum(pick(r, amtIdx));
+    });
+
+    document.getElementById('kpi_cus_active').textContent = money(activeCus.size);
+    document.getElementById('kpi_loans').textContent      = money(resLoan.total ?? rows.length ?? 0);
+    document.getElementById('kpi_amount').textContent     = money(totalLoanAmt);
+
+    // hợp đồng trong tuần
+    const loansWeek = rows.filter(r=>isInThisWeek(pick(r,startIdx)))
+      .map(r=>({ id: pick(r,idIdx), ten: pick(r,nameIdx), start: pick(r,startIdx), amount: toNum(pick(r,amtIdx)) }))
+      .sort((a,b)=> new Date(b.start||0)-new Date(a.start||0));
+    const tb=document.getElementById('dash_loans_week'); if (tb) tb.innerHTML='';
+    loansWeek.forEach(o=>{
+      const tr=document.createElement('tr');
+      [o.id, o.ten||'', fmt(o.start), money(o.amount)]
+        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+      tb?.appendChild(tr);
+    });
+
+    // payments trong tuần
+    google.script.run.withSuccessHandler(resPay=>{
+      const P=hmap(resPay.headers||[]);
+      const dateIdx=P['Ngày'] ?? -1;
+      const amtIdx =P['Số tiền'] ?? -1;
+      const typeIdx=(P['Loại'] ?? P['Loại (gốc/lãi/phí)'] ?? P['PTTT'] ?? -1);
+      const loanIdx=P['Mã HĐ'] ?? -1;
+
+      const paysWeek=(resPay.rows||[]).filter(r=>isInThisWeek(pick(r,dateIdx)))
+        .map(r=>({ date:pick(r,dateIdx), mahd:pick(r,loanIdx), type:pick(r,typeIdx), amt:toNum(pick(r,amtIdx)) }))
+        .sort((a,b)=> new Date(b.date||0)-new Date(a.date||0));
+      const tb2=document.getElementById('dash_pays_week'); if (tb2) tb2.innerHTML='';
+      paysWeek.forEach(o=>{
+        const tr=document.createElement('tr');
+        [fmt(o.date), o.mahd||'', o.type||'', money(o.amt)]
+          .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+        tb2?.appendChild(tr);
+      });
+
+      // quỹ vốn
+      google.script.run.withSuccessHandler(cfg=>{
+        const fund = Number(cfg?.fund || 0);
+        document.getElementById('kpi_fund').textContent      = money(fund);
+        document.getElementById('kpi_fund_left').textContent = money(Math.max(fund - totalLoanAmt, 0));
+      }).getAppConfig();
+
+    }).listRecords({tableKey:'PAYMENTS', page:1, q:''});
+
+    // Nhắc việc hôm nay
+    const todayISO = new Date().toISOString().slice(0,10);
+    google.script.run.withSuccessHandler(rem=>{
+      const dueT  = document.getElementById('dash_due_today');  if (dueT)  dueT.innerHTML='';
+      const closT = document.getElementById('dash_close_today');if (closT) closT.innerHTML='';
+      (rem?.dueToday||[]).forEach(o=>{
+        const tr=document.createElement('tr');
+        [o.id, o.name||'', o.k||'', fmt(o.due)].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+        });
+        dueT?.appendChild(tr);
+      });
+      (rem?.closeToday||[]).forEach(o=>{
+        const tr=document.createElement('tr');
+        [o.id, o.name||'', fmt(o.close), o.status||''].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+        });
+        closT?.appendChild(tr);
+      });
+    }).getRemindersToday(todayISO);
+
+  }).listRecords({tableKey:'LOANS', page:1, q:''});
+}
+
+/* ========= KHÁCH HÀNG ========= */
+function loadCustomers(page=1){
+  const q = (document.getElementById('cus_search')?.value || '').trim();
+  google.script.run
+    .withSuccessHandler(res=>{
+      const H = hmap(res.headers||[]);
+      const idIdx   = (H['ID Khách'] ?? H['IDVC'] ?? H['ID'] ?? 0);
+      const nameIdx = (H['Tên'] ?? H['TenKH'] ?? H['Name'] ?? -1);
+      const phoneIdx= (H['SĐT'] ?? H['Phone'] ?? -1);
+      const emailIdx= (H['Email'] ?? -1);
+      const noteIdx = (H['Ghi chú'] ?? H['Note'] ?? -1);
+
+      const tb=document.getElementById('cus_rows'); if(!tb) return;
+      tb.innerHTML='';
+      const rows = res.rows || [];
+      const total = res.total ?? rows.length ?? 0;
+      const ttlEl = document.getElementById('cus_total');
+      if (ttlEl) ttlEl.textContent='Danh sách khách hàng — Tổng ' + total + ' bản ghi';
+
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        [pick(r,idIdx), pick(r,nameIdx), pick(r,phoneIdx), pick(r,emailIdx), pick(r,noteIdx)]
+          .forEach(v=>{ const td=document.createElement('td'); td.textContent=(v??''); tr.appendChild(td); });
+        tb.appendChild(tr);
+      });
+    })
+    .withFailureHandler(e=> alert('Không tải được khách hàng: '+(e?.message||e)))
+    .listRecords({tableKey:'CUSTOMERS', page, q});
+}
+function saveCustomerFromDialog(){
+  const name  = (document.getElementById('dlg_cus_name')?.value || '').trim();
+  const phone = (document.getElementById('dlg_cus_phone')?.value || '').trim();
+  const email = (document.getElementById('dlg_cus_email')?.value || '').trim();
+  const note  = (document.getElementById('dlg_cus_note')?.value || '').trim();
+  const idVal = (document.getElementById('dlg_cus_id')?.value || '').trim();
+
+  const rec = {
+    'ID Khách': idVal, 'IDVC': idVal,
+    'Tên': name, 'TenKH': name, 'Name': name,
+    'SĐT': phone, 'Phone': phone,
+    'Email': email,
+    'Ghi chú': note, 'Note': note
+  };
+
+  google.script.run
+    .withSuccessHandler(_=>{
+      const dlg=document.getElementById('dlg_customer');
+      if(dlg) dlg.close();
+      ['dlg_cus_id','dlg_cus_name','dlg_cus_phone','dlg_cus_email','dlg_cus_note']
+        .forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+      loadCustomers();
+      ensureCustomerDropdown(true);
+      alert('Đã lưu khách hàng');
+    })
+    .withFailureHandler(e=> alert('Lỗi lưu khách hàng: ' + (e?.message||e)))
+    .saveRecord({tableKey:'CUSTOMERS', record:rec});
+}
+function bindCustomerImports(){
+  const btnTpl = document.getElementById('imp_cus_tpl');
+  const btnRun = document.getElementById('imp_cus_run');
+  if (btnTpl && !btnTpl.dataset.bound){
+    btnTpl.dataset.bound='1';
+    btnTpl.onclick=()=> google.script.run.withSuccessHandler(id=>alert('Đã tạo file mẫu Khách hàng: '+id))
+      .getImportTemplate('CUSTOMERS');
+  }
+  if (btnRun && !btnRun.dataset.bound){
+    btnRun.dataset.bound='1';
+    btnRun.onclick=()=>{
+      const fileId=(document.getElementById('imp_cus_file')?.value||'').trim();
+      if(!fileId) return alert('Nhập Drive File ID');
+      google.script.run.withSuccessHandler(res=>{
+        alert('Nhập/Update khách hàng: '+(res?.updated||0)+' dòng.');
+        loadCustomers();
+        ensureCustomerDropdown(true);
+      }).importCustomersFromFile(fileId);
+    };
+  }
+}
+
+/* ========= DROPDOWN KH ========= */
+function ensureCustomerDropdown(force){
+  const sels = [
+    document.getElementById('dlg_loan_cus_select')
+  ].filter(Boolean);
+  if (!sels.length) return;
+  if (sels.every(s => s.dataset.loaded === '1') && !force) return;
+
+  google.script.run
+    .withSuccessHandler(res=>{
+      const H = hmap(res.headers||[]);
+      const idIdx   = H['ID Khách'] ?? H['IDVC'] ?? 0;
+      const nameIdx = H['Tên']     ?? H['TenKH'] ?? -1;
+
+      const options = [{id:'', name:'— Chọn khách hàng —'}]
+        .concat((res.rows||[]).map(r=>{
+          const id = pick(r,idIdx);
+          const nm = pick(r,nameIdx) || id;
+          return {id, name:nm};
+        }));
+
+      sels.forEach(sel=>{
+        sel.innerHTML='';
+        options.forEach(o=>{
+          const op=document.createElement('option');
+          op.value=o.id; op.dataset.id=o.id; op.textContent=o.name;
+          sel.appendChild(op);
+        });
+        sel.dataset.loaded='1';
+      });
+    })
+    .withFailureHandler(e=> alert('Không tải được danh sách Khách hàng: ' + (e?.message||e)))
+    .listRecords({tableKey:'CUSTOMERS', page:1, q:''});
+}
+
+/* ========= HỢP ĐỒNG ========= */
+function loadLoans(page=1){
+  const q = (document.getElementById('loan_search')?.value || '').trim();
+  google.script.run
+    .withSuccessHandler(res=>{
+      const H=hmap(res.headers||[]);
+      const idIdx     = (H['Mã HĐ'] ?? H['MaHD'] ?? 0);
+      const cusIdIdx  = (H['ID Khách'] ?? H['IDVC'] ?? -1);
+      const cusNameIdx= (H['Tên KH'] ?? H['TenKH'] ?? H['Tên'] ?? -1);
+      const plIdx     = (H['PL KH'] ?? -1);
+      const typeIdx   = (H['Hình thức'] ?? H['Loại'] ?? H['LoaiHD'] ?? -1);
+      const startIdx  = (H['Ngày giải ngân'] ?? H['Bắt đầu'] ?? H['StartDate'] ?? -1);
+      const monthsIdx = (H['Kỳ hạn (tháng)'] ?? H['TermMonths'] ?? -1);
+      const rateIdx   = (H['Lãi suất (%/tháng)'] ?? H['Lãi/tháng'] ?? H['RatePerMonth'] ?? -1);
+      const amountIdx = (H['Số tiền vay'] ?? H['Gốc'] ?? H['Principal'] ?? H['Amount'] ?? -1);
+      const cycleIdx  = (H['Chu kỳ (tháng)'] ?? -1);
+      const closeIdx  = (H['Ngày tất toán'] ?? H['Kết thúc'] ?? H['EndDate'] ?? -1);
+      const statusIdx = (H['Trạng thái'] ?? H['Status'] ?? -1);
+      const cIdx      = (H['Tạo'] ?? H['CreatedAt'] ?? -1);
+      const uIdx      = (H['Cập nhật'] ?? H['UpdatedAt'] ?? -1);
+      const eIdx      = (H['Người sửa'] ?? H['UpdatedBy'] ?? -1);
+
+      const tb=document.getElementById('loan_rows'); if(!tb) return;
+      tb.innerHTML='';
+
+      const rows = res.rows || [];
+      const total = res.total ?? rows.length ?? 0;
+      const ttlEl = document.getElementById('loan_total');
+      if (ttlEl) ttlEl.textContent='Tổng ' + total + ' bản ghi';
+
+      rows.forEach(r=>{
+        const id = pick(r,idIdx);
+        const tr=document.createElement('tr');
+        [
+          id, pick(r,cusIdIdx), pick(r,cusNameIdx), pick(r,plIdx), pick(r,typeIdx),
+          fmt(pick(r,startIdx)), pick(r,monthsIdx), pick(r,rateIdx),
+          pick(r,amountIdx), pick(r,cycleIdx), fmt(pick(r,closeIdx)),
+          pick(r,statusIdx), fmt(pick(r,cIdx)), fmt(pick(r,uIdx)), pick(r,eIdx)
+        ].forEach(v=>{ const td=document.createElement('td'); td.textContent=(v??''); tr.appendChild(td); });
+
+        // Thao tác
+        const tdAct=document.createElement('td');
+        const bView=document.createElement('button'); bView.className='btn'; bView.textContent='Xem';
+        bView.onclick=()=>{ document.getElementById('slip_mahd').value=id; navigate('loanmgr'); showLoanSlip(); };
+        const bEdit=document.createElement('button'); bEdit.className='btn'; bEdit.textContent='Sửa'; bEdit.style.marginLeft='6px';
+        bEdit.onclick=()=> openEditLoanDialog(r, H);
+        const bDel=document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Xoá'; bDel.style.marginLeft='6px';
+        bDel.onclick=()=> deleteLoanById(id);
+        tdAct.appendChild(bView); tdAct.appendChild(bEdit); tdAct.appendChild(bDel);
+        tr.appendChild(tdAct);
+
+        tb.appendChild(tr);
+      });
+    })
+    .withFailureHandler(e=> alert('Không tải được Hợp đồng: '+(e?.message||e)))
+    .listRecords({tableKey:'LOANS', page, q});
+}
+function openLoanDialog(){ initLoanDialog(); document.getElementById('dlg_loan').showModal(); }
+function initLoanDialog(){
+  ensureCustomerDropdown(true);
+  const sel=document.getElementById('dlg_loan_cus_select');
+  if(sel && !sel.dataset.bound){
+    sel.dataset.bound='1';
+    sel.addEventListener('change', ()=>{
+      const op=sel.selectedOptions[0];
+      document.getElementById('dlg_loan_cusid').value=op?.dataset?.id||'';
+    });
+  }
+  // auto tính ngày tất toán
+  ['dlg_loan_start','dlg_loan_months'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && !el.dataset.bound){
+      el.dataset.bound='1';
+      el.addEventListener('input', ()=>{
+        const start=(document.getElementById('dlg_loan_start')?.value||'');
+        const m=(document.getElementById('dlg_loan_months')?.value||'');
+        document.getElementById('dlg_loan_close').value = addMonths(start, m);
+      });
+    }
+  });
+}
+function saveLoanFromDialog(){
+  const cusSel  = document.getElementById('dlg_loan_cus_select');
+  const cusName = cusSel?.selectedOptions?.[0]?.textContent || '';
+  const cusId   = cusSel?.value || (document.getElementById('dlg_loan_cusid')?.value||'');
+
+  const startISO = (document.getElementById('dlg_loan_start')?.value || '');
+  const months   = Number((document.getElementById('dlg_loan_months')?.value || 0));
+  const closeISO = (document.getElementById('dlg_loan_close')?.value || addMonths(startISO, months));
+  if (document.getElementById('dlg_loan_close')) document.getElementById('dlg_loan_close').value = closeISO;
+
+  const rec = {
+    'Mã HĐ'     : (document.getElementById('dlg_loan_id')?.value || ''), 'MaHD': (document.getElementById('dlg_loan_id')?.value || ''),
+    'ID Khách'  : cusId,              'IDVC': cusId,
+    'Tên KH'    : cusName,            'TenKH': cusName,
+    'PL KH'     : (document.getElementById('dlg_loan_plkh')?.value || ''),
+    'Hình thức' : (document.getElementById('dlg_loan_type')?.value || ''),
+    'Loại'      : (document.getElementById('dlg_loan_type')?.value || ''), 'LoaiHD': (document.getElementById('dlg_loan_type')?.value || ''),
+    'Ngày giải ngân': startISO, 'Bắt đầu': startISO, 'StartDate': startISO,
+    'Ngày tất toán' : closeISO, 'Kết thúc': closeISO, 'EndDate'  : closeISO,
+    'Kỳ hạn (tháng)': months,
+    'Lãi suất (%/tháng)': Number((document.getElementById('dlg_loan_rate')?.value || 0)),
+    'Lãi/tháng'         : Number((document.getElementById('dlg_loan_rate')?.value || 0)), 'RatePerMonth': Number((document.getElementById('dlg_loan_rate')?.value || 0)),
+    'Số tiền vay': Number((document.getElementById('dlg_loan_amount')?.value || 0)), 'Gốc': Number((document.getElementById('dlg_loan_amount')?.value || 0)), 'Principal': Number((document.getElementById('dlg_loan_amount')?.value || 0)),
+    'Chu kỳ (tháng)': 1
+  };
+
+  google.script.run
+    .withSuccessHandler(_=>{
+      const dlg=document.getElementById('dlg_loan');
+      if (dlg) dlg.close();
+      ['dlg_loan_id','dlg_loan_plkh','dlg_loan_cusid','dlg_loan_amount','dlg_loan_rate','dlg_loan_months','dlg_loan_start','dlg_loan_close']
+        .forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+      if (cusSel) cusSel.value='';
+      loadLoans();
+      alert('Đã lưu hợp đồng');
+    })
+    .withFailureHandler(e=> alert('Lỗi lưu hợp đồng: ' + (e?.message||e)))
+    .saveRecord({tableKey:'LOANS', record:rec});
+}
+function openEditLoanDialog(row, H){
+  // map row -> dialog fields
+  document.getElementById('dlg_loan').showModal();
+  document.getElementById('dlg_loan_id').value = pick(row, H['Mã HĐ'] ?? H['MaHD']);
+  document.getElementById('dlg_loan_plkh').value = pick(row, H['PL KH']);
+  // khách hàng
+  ensureCustomerDropdown(true);
+  const cusId = pick(row, H['ID Khách'] ?? H['IDVC']);
+  document.getElementById('dlg_loan_cusid').value = cusId;
+  // amount, rate, months
+  document.getElementById('dlg_loan_amount').value = toNum(pick(row, H['Số tiền vay'] ?? H['Gốc'] ?? H['Principal']));
+  document.getElementById('dlg_loan_rate').value   = toNum(pick(row, H['Lãi suất (%/tháng)'] ?? H['Lãi/tháng']));
+  document.getElementById('dlg_loan_months').value = toNum(pick(row, H['Kỳ hạn (tháng)']));
+  document.getElementById('dlg_loan_type').value   = pick(row, H['Hình thức'] ?? H['Loại']);
+  const start = pick(row, H['Ngày giải ngân'] ?? H['Bắt đầu'] ?? H['StartDate']);
+  const close = pick(row, H['Ngày tất toán'] ?? H['Kết thúc'] ?? H['EndDate']);
+  document.getElementById('dlg_loan_start').value  = toDateInput(start);
+  document.getElementById('dlg_loan_close').value  = toDateInput(close);
+}
+function deleteLoanById(id){
+  if(!id) return;
+  if(!confirm('Xoá hợp đồng '+id+' ?')) return;
+  google.script.run.withSuccessHandler(_=> loadLoans())
+    .withFailureHandler(e=> alert('Không xoá được: '+(e?.message||e)))
+    .deleteRecord({tableKey:'LOANS', id});
+}
+function bindLoanImports(){
+  const bind=(id,fn)=>{ const el=document.getElementById(id); if(el && !el.dataset.bound){ el.dataset.bound='1'; el.onclick=fn; } };
+  bind('imp_loan_tpl', ()=> google.script.run.withSuccessHandler(id=>alert('Đã tạo file mẫu Hợp đồng: '+id)).getImportTemplate('LOANS'));
+  bind('imp_loan_run', ()=>{
+    const fileId=(document.getElementById('imp_loan_file')?.value||'').trim();
+    if(!fileId) return alert('Nhập Drive File ID');
+    google.script.run.withSuccessHandler(res=>{
+      alert('Nhập/Update hợp đồng: '+(res?.updated||0)+' dòng.');
+      loadLoans();
+    }).importLoansFromFile(fileId);
+  });
+}
+
+/* ========= LOAN MGR / SLIP ========= */
+function bindLoanMgr(){
+  const bind=(id,fn)=>{ const el=document.getElementById(id); if(el && !el.dataset.bound){ el.dataset.bound='1'; el.onclick=fn; } };
+  bind('slip_btn', showLoanSlip);
+  bind('slip_tg_btn', sendSlipTelegram);
+  bind('imp_pay_tpl', ()=> google.script.run.withSuccessHandler(id=>alert('Đã tạo file mẫu Thanh toán: '+id)).getImportTemplate('PAYMENTS'));
+  bind('imp_pay_run', ()=>{
+    const fileId=(document.getElementById('imp_pay_file')?.value||'').trim();
+    if(!fileId) return alert('Nhập Drive File ID');
+    google.script.run.withSuccessHandler(res=>{
+      alert('Nhập/Update thanh toán: '+(res?.updated||0)+' dòng.');
+      loadPayHistoryByLoan(); // refresh nếu đang xem
+      loadUpcoming();         // refresh kỳ sắp tới
+      showLoanSlip();         // refresh phiếu
+    }).importPaymentsFromFile(fileId);
+  });
+
+  // change triggers to load upcoming
+  ['slip_mahd','slip_refdate'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && !el.dataset.bound){
+      el.dataset.bound='1';
+      el.addEventListener('change', loadUpcoming);
+      el.addEventListener('blur', loadUpcoming);
+    }
+  });
+
+  // payment form
+  bind('pay_clear', ()=>fillPayForm({}));
+  bind('pay_save', savePayment);
+  bind('pay_delete', deletePayment);
+}
+function showLoanSlip(){
+  const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
+  if (!mahd) return alert('Nhập Mã HĐ');
+  const refISO = (document.getElementById('slip_refdate')?.value || '');
+  const kSel = document.getElementById('slip_k_select');
+  const forcedK = kSel && kSel.value ? Number(kSel.value) : null;
+
+  google.script.run.withSuccessHandler(res=>{
+    if (!res?.ok) return alert(res?.message || 'Không lấy được phiếu');
+    const s = id => document.getElementById(id);
+    s('slip_card').style.display = 'block';
+    s('slip_title').textContent  = 'Phiếu thanh toán — Kỳ ' + (res.period?.k || '-');
+
+    s('slip_id').textContent   = res.loan?.id || '';
+    s('slip_name').textContent = res.loan?.name || '';
+    s('slip_type').textContent = res.loan?.type || '';
+
+    s('slip_k').textContent    = res.period?.k || '';
+    s('slip_from').textContent = fmt(res.period?.from);
+    s('slip_to').textContent   = fmt(res.period?.to);
+
+    s('slip_goc_due').textContent = money(res.period?.principalDue || 0);
+    s('slip_lai_due').textContent = money(res.period?.interestDue  || 0);
+    s('slip_goc_paid').textContent= money(res.paid?.principal || 0);
+    s('slip_lai_paid').textContent= money(res.paid?.interest  || 0);
+
+    s('slip_total_due').textContent    = money(res.period?.totalDue || 0);
+    s('slip_total_paid').textContent   = money(res.paid?.total || 0);
+    s('slip_total_remain').textContent = money(res.remaining?.total || 0);
+  }).getLoanSlip(mahd, refISO || null, forcedK);
+
+  loadUpcoming();
+}
+function loadUpcoming(){
+  const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
+  const ref  = (document.getElementById('slip_refdate')?.value || '');
+  if (!mahd) return;
+
+  google.script.run.withSuccessHandler(res=>{
+    const tbody = document.getElementById('upcoming_rows'); if (tbody) tbody.innerHTML='';
+    const sel   = document.getElementById('slip_k_select'); if (sel) sel.innerHTML = '<option value="">(Tự động)</option>';
+
+    (res?.rows||[]).forEach(row=>{
+      const tr=document.createElement('tr');
+      [row.k, fmt(row.due), money(row.goc), money(row.lai), money(row.tong)]
+        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+      tbody?.appendChild(tr);
+
+      const op=document.createElement('option'); op.value=row.k; op.textContent='Kỳ '+row.k+' — '+fmt(row.due);
+      sel?.appendChild(op);
+    });
+
+    if (sel && res?.currentK) sel.value = String(res.currentK);
+  }).getUpcomingSchedule(mahd, ref, 12);
+}
+function loadRemindersToday(){
+  const todayISO = new Date().toISOString().slice(0,10);
+  google.script.run.withSuccessHandler(res=>{
+    const dueT  = document.getElementById('rem_due_rows');   if (dueT)  dueT.innerHTML  = '';
+    const closT = document.getElementById('rem_close_rows'); if (closT) closT.innerHTML = '';
+
+    (res?.dueToday || []).forEach(o=>{
+      const tr=document.createElement('tr');
+      [o.id, o.name||'', o.k||'', fmt(o.due)]
+        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+      dueT?.appendChild(tr);
+    });
+    (res?.closeToday || []).forEach(o=>{
+      const tr=document.createElement('tr');
+      [o.id, o.name||'', fmt(o.close), o.status||'']
+        .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+      closT?.appendChild(tr);
+    });
+  }).getRemindersToday(todayISO);
+}
+
+/* ========= PAYMENTS ========= */
+function refreshPayTypesFromCfg(){
+  google.script.run.withSuccessHandler(cfg=> refreshPayTypeOptions(cfg?.payTypes || ['gốc','lãi','phí'])).getAppConfig();
+}
+function refreshPayTypeOptions(payTypes){
+  const sel = document.getElementById('pay_type'); if(!sel) return;
+  sel.innerHTML='';
+  (payTypes||['gốc','lãi','phí']).forEach(t=>{
+    const op=document.createElement('option'); op.textContent=t; op.value=t; sel.appendChild(op);
+  });
+}
+function fillPayForm(o){
+  const g=id=>document.getElementById(id);
+  if(g('pay_id')) g('pay_id').value=o.id||'';
+  if(g('pay_loan')) g('pay_loan').value=o.loan||'';
+  if(g('pay_date')) g('pay_date').value=toDateInput(o.date);
+  if(g('pay_amount')) g('pay_amount').value=o.amount||'';
+  if(g('pay_type')) g('pay_type').value=o.type||((g('pay_type')?.options?.[0]?.value)||'gốc');
+  if(g('pay_note')) g('pay_note').value=o.note||'';
+}
+function savePayment(){
+  const t=document.getElementById('pay_type')?.value || 'gốc';
+  const rec={
+    'PaymentID': (document.getElementById('pay_id')?.value || ''),
+    'Mã HĐ'    : (document.getElementById('pay_loan')?.value || ''),
+    'Ngày'     : (document.getElementById('pay_date')?.value || ''),
+    'Số tiền'  : Number((document.getElementById('pay_amount')?.value || 0)),
+    'Loại'     : t,
+    'PTTT'     : t,
+    'Ghi chú'  : (document.getElementById('pay_note')?.value || '')
+  };
+  google.script.run.withSuccessHandler(_=>{
+    fillPayForm({}); alert('Đã lưu thanh toán'); loadUpcoming(); showLoanSlip();
+  }).saveRecord({tableKey:'PAYMENTS', record:rec});
+}
+function deletePayment(){
+  const id=(document.getElementById('pay_id')?.value || '');
+  if(!id) return alert('Nhập PaymentID để xoá');
+  if(!confirm('Xoá thanh toán?')) return;
+  google.script.run.withSuccessHandler(_=>{ fillPayForm({}); loadUpcoming(); showLoanSlip(); })
+    .deleteRecord({tableKey:'PAYMENTS', id:id});
+}
+
+/* ========= HISTORY ========= */
+function loadPayHistoryByLoan(){
+  const mahd=(document.getElementById('hist_mahd')?.value || '').trim();
+  if(!mahd){ alert('Nhập Mã HĐ để xem lịch sử.'); return; }
+  google.script.run.withSuccessHandler(res=>{
+    const H=hmap(res.headers||[]);
+    const dateIdx=H['Ngày']??-1, typeIdx=(H['Loại']??H['Loại (gốc/lãi/phí)']??H['PTTT']??-1),
+          amtIdx=H['Số tiền']??-1, noteIdx=H['Ghi chú']??-1, idIdx=H['PaymentID']??0, loanIdx=H['Mã HĐ']??-1;
+
+    const rows=(res.rows||[]).filter(r=> String(pick(r,loanIdx)||'').toLowerCase().includes(mahd.toLowerCase()));
+    const tb=document.getElementById('hist_rows'); tb.innerHTML='';
+    let sumGoc=0,sumLai=0,sumPhi=0;
+    rows.map(r=>({ngay:pick(r,dateIdx), loai:pick(r,typeIdx), so:toNum(pick(r,amtIdx)), note:pick(r,noteIdx), payid:pick(r,idIdx)}))
+      .sort((a,b)=> new Date(b.ngay||0)-new Date(a.ngay||0))
+      .forEach(o=>{
+        const tr=document.createElement('tr');
+        [fmt(o.ngay), (o.loai||''), money(o.so), (o.note||''), (o.payid||'')]
+          .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+        tb.appendChild(tr);
+        const t=String(o.loai||'').toLowerCase();
+        if(t==='gốc') sumGoc+=o.so; else if(t==='lãi') sumLai+=o.so; else if(t==='phí') sumPhi+=o.so;
+      });
+    document.getElementById('hist_info').textContent=`Tìm thấy ${rows.length} dòng cho Mã HĐ ${mahd}`;
+    document.getElementById('hist_sum').textContent=
+      `Tổng gốc: ${money(sumGoc)} | Tổng lãi: ${money(sumLai)} | Tổng phí: ${money(sumPhi)} | Tổng tất cả: ${money(sumGoc+sumLai+sumPhi)}`;
+  }).listRecords({tableKey:'PAYMENTS', page:1, q: mahd});
+}
+
+/* ========= SETTINGS ========= */
+function loadSettings(){
+  google.script.run.withSuccessHandler(cfg=>{
+    const el = document.getElementById('cfg_fund');
+    if (el) el.value = Number(cfg?.fund || 0);
+    const elPT = document.getElementById('cfg_paytypes');
+    if (elPT) elPT.value = (cfg?.payTypes || ['gốc','lãi','phí']).join(',');
+    refreshPayTypeOptions(cfg?.payTypes || ['gốc','lãi','phí']);
+  }).getAppConfig();
+}
+function saveSettings(){
+  const fund = Number((document.getElementById('cfg_fund')?.value || 0));
+  const payTypes = (document.getElementById('cfg_paytypes')?.value || 'gốc,lãi,phí')
+                   .split(',').map(s=>s.trim()).filter(Boolean);
+  google.script.run.withSuccessHandler(_=>{
+    alert('Đã lưu cấu hình.');
+    loadDashboard();
+    refreshPayTypeOptions(payTypes);
+  }).setAppConfig({ fund, payTypes });
+}
+
+/* ========= ACCOUNT PREFS ========= */
+function loadAccountPrefs(){
+  google.script.run.withSuccessHandler(cfg=>{
+    const t=document.getElementById('acct_timefmt'); const f=document.getElementById('acct_font');
+    if(t) t.value = cfg?.timeFormat || 'vi-VN';
+    if(f) f.value = cfg?.font || 'system';
+  }).getMyPrefs();
+}
+function saveAccountPrefs(){
+  const timeFormat = (document.getElementById('acct_timefmt')?.value || 'vi-VN');
+  const font       = (document.getElementById('acct_font')?.value || 'system');
+  google.script.run.withSuccessHandler(_=> alert('Đã lưu cài đặt hiển thị.'))
+    .setMyPrefs({ timeFormat, font });
+}
+function changePassword(){
+  const oldPw = (document.getElementById('acct_old')?.value || '');
+  const newPw = (document.getElementById('acct_new')?.value || '');
+  google.script.run.withSuccessHandler(_=>{
+    alert('Đổi mật khẩu thành công.');
+    document.getElementById('acct_old').value='';
+    document.getElementById('acct_new').value='';
+  }).withFailureHandler(e=> alert(e?.message || e))
+    .changeMyPassword(oldPw, newPw);
+}
+
+/* ========= TELEGRAM ========= */
+function sendSlipTelegram(){
+  const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
+  if (!mahd) return alert('Nhập Mã HĐ trước.');
+  const refISO = (document.getElementById('slip_refdate')?.value || '');
+  const kSel = document.getElementById('slip_k_select');
+  const k = kSel && kSel.value ? Number(kSel.value) : null;
+
+  google.script.run
+    .withSuccessHandler(res=> alert('Đã gửi phiếu vào Telegram' + (res?.k ? (' — Kỳ '+res.k) : '')))
+    .withFailureHandler(e=> alert('Lỗi gửi Telegram: ' + (e?.message || e)))
+    .sendSlipToTelegram(mahd, refISO, k);
+}
+
+/* ========= READY ========= */
+window.addEventListener('hashchange', onRoute);
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderMenu();
+  applyMenuVisibility();
+  if(!location.hash) navigate('dashboard');
+  onRoute();
+
+  const bind=(id,fn)=>{ const el=document.getElementById(id); if(el && !el.dataset.bound){ el.dataset.bound='1'; el.onclick=fn; } };
+
+  // KH
+  bind('cus_btnSearch', ()=>loadCustomers());
+  bind('btn_new_customer', ()=>document.getElementById('dlg_customer').showModal());
+  bind('dlg_cus_save', saveCustomerFromDialog);
+
+  // HĐ
+  bind('loan_btnSearch', ()=>loadLoans());
+  bind('btn_new_loan', openLoanDialog);
+  bind('dlg_loan_save', saveLoanFromDialog);
+
+  // History
+  bind('hist_load', loadPayHistoryByLoan);
+
+  // Settings
+  bind('cfg_save', saveSettings);
+
+  // Account
+  bind('acct_saveprefs', saveAccountPrefs);
+  bind('acct_chpass',    changePassword);
+});
+
+// ===== Session token (tài khoản nội bộ) =====
+const SESS_KEY = 'WQT_SESSION';
+const getToken = () => localStorage.getItem(SESS_KEY) || '';
+const setToken = (t) => t ? localStorage.setItem(SESS_KEY, t) : localStorage.removeItem(SESS_KEY);
+
+function runApi(fn, payload, onOk, onFail){
+  payload = payload || {};
+  const t = getToken();
+  if (t) payload.session = t;
+  google.script.run
+    .withSuccessHandler(onOk)
+    .withFailureHandler(onFail || (e=>alert(e?.message || e)))
+    [fn](payload);
+}
+
+// Đăng nhập
+function openLogin(){ document.getElementById('dlg_login').showModal(); }
+function doLogin(){
+  const u = (document.getElementById('login_user')?.value || '').trim();
+  const p = (document.getElementById('login_pass')?.value || '');
+  google.script.run.withSuccessHandler(res=>{
+    if(!res?.ok) return alert('Đăng nhập thất bại.');
+    setToken(res.token);
+    document.getElementById('dlg_login').close();
+    alert('Xin chào ' + (res.display || u));
+    // Reload menu theo quyền
+    applyMenuVisibility();
+  }).withFailureHandler(e=> alert(e?.message||e)).local_login(u,p);
+}
+
+// Bật modal nếu chưa có phiên
+function ensureLogin() {
+  runApi('whoami', {}, (res)=>{
+    if (!res || !res.ok) {
+      const dlg = document.getElementById('dlg_login');
+      if (dlg && !dlg.open) dlg.showModal();
+    }
+  });
+}
+
+function bindLoginButton(){
+  const btn = document.getElementById('btn_login_do');
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', ()=>{
+    const u = (document.getElementById('login_user')?.value || '').trim();
+    const p = (document.getElementById('login_pass')?.value || '');
+    if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
+    google.script.run
+      .withSuccessHandler(res=>{
+        if (res?.ok && res.token){
+          setToken(res.token);
+          document.getElementById('dlg_login')?.close();
+          location.reload();
+        } else {
+          alert('Đăng nhập thất bại.');
+        }
+      })
+      .withFailureHandler(e=> alert(e?.message || e))
+      .local_login(u, p);
+  });
+}
+
+// Đăng xuất
+function logoutAll(){
+  const t = getToken();
+  google.script.run.withSuccessHandler(_=>{
+    setToken('');
+    location.reload();
+  }).local_logout(t);
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  bindLoginButton();
+  ensureLogin();
+});
+</script>
