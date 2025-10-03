@@ -34,7 +34,14 @@ function renderMenu(){
   });
 }
 
-function navigate(key){ location.hash='#'+key; }
+function navigate(key){
+  const target = '#' + key;
+  if ((location.hash || '#') === target){
+    onRoute();
+  } else {
+    location.hash = target;
+  }
+}
 function currentKey(){ return (location.hash||'#dashboard').replace('#',''); }
 function setActiveTab(key){
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
