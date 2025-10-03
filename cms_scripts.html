@@ -44,6 +44,10 @@ function setAuthState(ok, meta){
     status.textContent = txt;
     status.classList.toggle('muted', !AUTH_STATE.ok);
   }
+
+  if (!AUTH_STATE.ok) {
+    showLoginDialog();
+  }
 }
 
 function showLoginDialog(){
@@ -54,6 +58,7 @@ function showLoginDialog(){
 
 function renderMenu(){
   const box = document.getElementById('menu');
+  if (!box) return;
   box.innerHTML = '';
   MENU.forEach(m => {
     const b = document.createElement('button');
@@ -72,6 +77,9 @@ function navigate(key){
     onRoute();
   } else {
     location.hash = target;
+  }
+  if (!AUTH_STATE.ok) {
+    showLoginDialog();
   }
 }
 function currentKey(){ return (location.hash||'#dashboard').replace('#',''); }
