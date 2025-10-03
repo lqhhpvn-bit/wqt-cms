@@ -116,24 +116,43 @@
   }
 
   /* ================== KPI ================== */
-  .kpi-grid{
+  .kpi-grid4{
     display:grid;
-    grid-template-columns: repeat(4, minmax(0,1fr));
-    gap:12px;
-  }
-  .kpi-columns{
-    display:flex;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
     gap:16px;
-    flex-wrap:wrap;
     margin-bottom:16px;
   }
-  .kpi-column{ flex:1; min-width:240px; }
-  .kpi-stack{ display:grid; gap:12px; }
-  .kpi{
+  .kpi-panel{
     background:#fff;
     border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .kpi-panel-title{
+    font-weight:700;
+    font-size:14px;
+    color:#1f2937;
+    letter-spacing:.3px;
+  }
+  .kpi-panel-body{
+    display:grid;
+    gap:12px;
+    grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+  }
+  .kpi{
+    background:linear-gradient(135deg, rgba(79,70,229,.08), rgba(79,70,229,0));
+    border:1px solid rgba(79,70,229,0.18);
     border-radius:var(--radius-sm);
     padding:14px 16px;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .kpi:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 28px rgba(79,70,229,0.18);
   }
   .kpi-title{
     font-size:12px; letter-spacing:.3px; color:var(--muted);
@@ -169,6 +188,27 @@
   .card-title{
     font-weight:700; margin-bottom:8px;
   }
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:16px;
+    margin-top:16px;
+  }
+  .feature{
+    padding:16px;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    background:linear-gradient(135deg, rgba(79,70,229,0.08), rgba(255,255,255,0));
+    box-shadow:0 10px 24px rgba(79,70,229,0.08);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .feature-title{
+    font-weight:700;
+    color:#1f2937;
+    letter-spacing:.2px;
+  }
   .alert{
     margin-top:12px;
     padding:12px 14px;
@@ -192,7 +232,16 @@
     background:#e0f2fe;
     color:#0369a1;
   }
+  .chip.pulse{
+    animation:pulseGlow 2.8s ease-in-out infinite;
+    box-shadow:0 0 0 rgba(34,197,94,0.4);
+  }
   .chip.green{ background:#dcfce7; color:#166534; }
+  @keyframes pulseGlow{
+    0%{ box-shadow:0 0 0 0 rgba(34,197,94,0.36); }
+    70%{ box-shadow:0 0 0 10px rgba(34,197,94,0); }
+    100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); }
+  }
   .dash-week-grid{
     display:grid;
     grid-template-columns:repeat(2, minmax(0, 1fr));

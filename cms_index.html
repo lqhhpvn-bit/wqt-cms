@@ -25,7 +25,19 @@
         </div>
 
         <!-- NAV: GIỮ id="menu" (JS cũ có thể gắn sự kiện vào đây) -->
-        <nav id="menu" class="menu-vertical"></nav>
+        <nav id="menu" class="menu-vertical">
+          <!-- Fallback menu (được JS thay thế khi tải xong) -->
+          <button class="tabbtn active" data-key="dashboard" onclick="navigate('dashboard')">Tổng quan</button>
+          <button class="tabbtn" data-key="customers" onclick="navigate('customers')">Khách hàng</button>
+          <button class="tabbtn" data-key="loans" onclick="navigate('loans')">Hợp đồng</button>
+          <button class="tabbtn" data-key="loanmgr" onclick="navigate('loanmgr')">Quản lý khoản vay/Thanh toán</button>
+          <button class="tabbtn" data-key="payhistory" onclick="navigate('payhistory')">Lịch sử thanh toán</button>
+          <button class="tabbtn" data-key="crm" onclick="navigate('crm')">CRM</button>
+          <button class="tabbtn" data-key="telegram" onclick="navigate('telegram')">Nhóm Telegram</button>
+          <button class="tabbtn" data-key="reports" onclick="navigate('reports')">Báo cáo</button>
+          <button class="tabbtn" data-key="settings" onclick="navigate('settings')">Cấu hình</button>
+          <button class="tabbtn" data-key="account" onclick="navigate('account')">Cài đặt</button>
+        </nav>
 
       </aside>
 
@@ -34,21 +46,26 @@
         <section id="view-dashboard" class="view">
           <h2>Tổng quan</h2>
 
-          <div id="dashboard_kpis" class="kpi-columns">
-            <div class="kpi-column">
-              <div class="kpi-group-title">Nguồn vốn & Thu</div>
-              <div class="kpi-stack">
+          <div id="dashboard_kpis" class="kpi-grid4">
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Nguồn vốn</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Quỹ vốn</div>
                   <div class="kpi-value" id="kpi_fund">0</div>
                 </div>
                 <div class="kpi">
-                  <div class="kpi-title">Tổng số tiền vay</div>
-                  <div class="kpi-value" id="kpi_amount">0</div>
-                </div>
-                <div class="kpi">
                   <div class="kpi-title">Quỹ còn lại</div>
                   <div class="kpi-value" id="kpi_fund_left">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Dòng tiền</div>
+              <div class="kpi-panel-body">
+                <div class="kpi">
+                  <div class="kpi-title">Tổng số tiền vay</div>
+                  <div class="kpi-value" id="kpi_amount">0</div>
                 </div>
                 <div class="kpi">
                   <div class="kpi-title">Gốc đã thu</div>
@@ -64,9 +81,9 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-column">
-              <div class="kpi-group-title">Hợp đồng & Khách hàng</div>
-              <div class="kpi-stack">
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Khách hàng</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Tổng số KH</div>
                   <div class="kpi-value" id="kpi_cus_total">0</div>
@@ -75,6 +92,11 @@
                   <div class="kpi-title">KH đang vay</div>
                   <div class="kpi-value" id="kpi_cus_active">0</div>
                 </div>
+              </div>
+            </div>
+            <div class="kpi-panel">
+              <div class="kpi-panel-title">Hợp đồng</div>
+              <div class="kpi-panel-body">
                 <div class="kpi">
                   <div class="kpi-title">Tổng số HĐ</div>
                   <div class="kpi-value" id="kpi_loans">0</div>
@@ -143,6 +165,47 @@
                   <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày tất toán</th><th>Trạng thái</th></tr></thead>
                   <tbody id="dash_close_today"></tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card m24">
+            <div class="card-head">Mô tả các chức năng chính</div>
+            <div class="card-body">
+              <p class="muted">Tổng hợp nhanh những gì bạn có thể làm trong hệ thống Web Quản Trị.</p>
+              <div class="feature-grid">
+                <div class="feature">
+                  <div class="feature-title">Tổng quan</div>
+                  <p>Theo dõi KPI tài chính, khách hàng và hợp đồng với khả năng tuỳ chỉnh hiển thị.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Khách hàng</div>
+                  <p>Quản lý danh sách khách hàng, tìm kiếm, thêm mới và xem thông tin chi tiết.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Hợp đồng</div>
+                  <p>Tra cứu các hợp đồng vay, lọc nhanh theo mã hoặc khách hàng và thực hiện cập nhật.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Khoản vay &amp; Thanh toán</div>
+                  <p>Tạo phiếu thanh toán theo kỳ hoặc khoảng ngày, xem lịch kỳ sắp tới và ghi nhận giao dịch.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Lịch sử thanh toán</div>
+                  <p>Xem lại toàn bộ giao dịch đã thu, lọc theo thời gian, loại tiền và hợp đồng.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">CRM</div>
+                  <p>Lưu vết tương tác với khách hàng, quản lý công việc và chăm sóc qua nhiều kênh.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Nhóm Telegram</div>
+                  <p>Điều phối thông báo và cấu hình nhóm trao đổi nội bộ ngay trong hệ thống.</p>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Cấu hình &amp; Phân quyền</div>
+                  <p>Tuỳ chỉnh KPI hiển thị, quản lý tài khoản đăng nhập và phân quyền truy cập theo nhu cầu.</p>
+                </div>
               </div>
             </div>
           </div>
