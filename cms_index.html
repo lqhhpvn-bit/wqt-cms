@@ -11,12 +11,21 @@
     <header class="topbar">
       <div class="brand">Web Quản Trị</div>
       <div class="spacer"></div>
-      <button class="btn" onclick="openLogin()">Đăng nhập</button>
-      <button class="btn danger" onclick="logoutAll()">Đăng xuất</button>
+      <div id="auth_status" class="auth-status muted">Chưa đăng nhập</div>
+      <button id="btn_open_login" class="btn" onclick="openLogin()">Đăng nhập</button>
+      <button id="btn_logout" class="btn danger hidden" onclick="logoutAll()">Đăng xuất</button>
     </header>
 
     <!-- ========== LAYOUT VỚI SIDEBAR TRÁI ========== -->
     <div class="app">
+      <div id="login_blocker" class="login-blocker hidden">
+        <div class="login-blocker-card">
+          <div class="login-blocker-title">Vui lòng đăng nhập</div>
+          <p>Đăng nhập để xem và thao tác dữ liệu quản trị. Liên hệ quản trị viên nếu bạn chưa có tài khoản.</p>
+          <button class="btn primary" onclick="openLogin()">Đăng nhập ngay</button>
+        </div>
+      </div>
+
       <aside class="sidebar">
         <div class="sidebar-head">
           <div class="meta">
