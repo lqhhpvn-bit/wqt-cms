@@ -228,7 +228,7 @@
         <!-- ========== CUSTOMERS ========== -->
         <section id="view-customers" class="view hidden">
           <h2>Khách hàng</h2>
-          <div class="row">
+          <div class="toolbar">
             <input id="cus_search" class="input" placeholder="Tìm ID/Tên/SĐT/Email..." />
             <button id="cus_btnSearch" class="btn">Tìm</button>
             <div class="spacer"></div>
@@ -247,7 +247,7 @@
         <!-- ========== LOANS ========== -->
         <section id="view-loans" class="view hidden">
           <h2>Hợp đồng</h2>
-          <div class="row">
+          <div class="toolbar">
             <input id="loan_search" class="input" placeholder="Tìm Mã HĐ/Tên KH/..." />
             <button id="loan_btnSearch" class="btn">Tìm</button>
             <div class="spacer"></div>
@@ -274,7 +274,7 @@
             <div class="card-body">
               <div class="grid-2">
                 <div>
-                  <div class="row">
+                  <div class="toolbar">
                     <input id="slip_mahd" class="input" placeholder="Nhập Mã HĐ" />
                     <label>Kỳ</label>
                     <select id="slip_k_select" class="input">
@@ -283,7 +283,7 @@
                     <button id="slip_btn" class="btn">Xem phiếu (kỳ)</button>
                   </div>
 
-                  <div class="row">
+                  <div class="toolbar">
                     <label>Tính theo khoảng ngày:</label>
                     <input id="slip_from" type="date" class="input" />
                     <span>—</span>
@@ -351,16 +351,26 @@
                     <div class="card-head">Thanh toán</div>
                     <div class="card-body">
                       <div class="row">
-                        <input id="pay_id" class="input" placeholder="PaymentID (để sửa/xoá)" />
-                        <input id="pay_loan" class="input" placeholder="Mã HĐ" />
+                        <div class="col-6">
+                          <input id="pay_id" class="input" placeholder="PaymentID (để sửa/xoá)" />
+                        </div>
+                        <div class="col-6">
+                          <input id="pay_loan" class="input" placeholder="Mã HĐ" />
+                        </div>
                       </div>
                       <div class="row">
-                        <label>Ngày</label>
-                        <input id="pay_date" type="date" class="input" />
-                        <label>Loại</label>
-                        <select id="pay_type" class="input"></select>
-                        <label>Số tiền</label>
-                        <input id="pay_amount" class="input" />
+                        <div class="col-4 field">
+                          <label for="pay_date">Ngày</label>
+                          <input id="pay_date" type="date" class="input" />
+                        </div>
+                        <div class="col-4 field">
+                          <label for="pay_type">Loại</label>
+                          <select id="pay_type" class="input"></select>
+                        </div>
+                        <div class="col-4 field">
+                          <label for="pay_amount">Số tiền</label>
+                          <input id="pay_amount" class="input" />
+                        </div>
                       </div>
                       <textarea id="pay_note" class="input" placeholder="Ghi chú"></textarea>
                     </div>
@@ -384,7 +394,7 @@
           <div class="card">
             <div class="card-head">Bộ lọc</div>
             <div class="card-body">
-              <div class="row wrap">
+              <div class="toolbar">
                 <input id="hist_mahd" class="input" placeholder="Mã HĐ (tuỳ chọn)" />
                 <label>Từ ngày</label>
                 <input id="hist_from" type="date" class="input" />
@@ -424,12 +434,27 @@
                 <div class="card-head">Nhật ký tương tác</div>
                 <div class="card-body">
                   <input id="crm_interaction_id" type="hidden" />
-                  <div class="row wrap">
-                    <label>ID Khách</label><input id="crm_interaction_customer" class="input" />
-                    <label>Ngày</label><input id="crm_interaction_date" type="date" class="input" />
-                    <label>Kênh</label><input id="crm_interaction_channel" class="input" />
-                    <label>Nhân viên</label><input id="crm_interaction_staff" class="input" />
-                    <label>Tag</label><input id="crm_interaction_tag" class="input" />
+                  <div class="row">
+                    <div class="col-6 field">
+                      <label for="crm_interaction_customer">ID Khách</label>
+                      <input id="crm_interaction_customer" class="input" />
+                    </div>
+                    <div class="col-6 field">
+                      <label for="crm_interaction_date">Ngày</label>
+                      <input id="crm_interaction_date" type="date" class="input" />
+                    </div>
+                    <div class="col-6 field">
+                      <label for="crm_interaction_channel">Kênh</label>
+                      <input id="crm_interaction_channel" class="input" />
+                    </div>
+                    <div class="col-6 field">
+                      <label for="crm_interaction_staff">Nhân viên</label>
+                      <input id="crm_interaction_staff" class="input" />
+                    </div>
+                    <div class="col-12 field">
+                      <label for="crm_interaction_tag">Tag</label>
+                      <input id="crm_interaction_tag" class="input" />
+                    </div>
                   </div>
                   <textarea id="crm_interaction_content" class="input" placeholder="Nội dung trao đổi..."></textarea>
                 </div>
@@ -457,17 +482,31 @@
                 <div class="card-head">Công việc</div>
                 <div class="card-body">
                   <input id="crm_task_id" type="hidden" />
-                  <div class="row wrap">
-                    <label>ID Khách</label><input id="crm_task_customer" class="input" />
-                    <label>Tiêu đề</label><input id="crm_task_title" class="input" />
-                    <label>Hạn</label><input id="crm_task_due" type="date" class="input" />
-                    <label>Trạng thái</label>
-                    <select id="crm_task_status" class="input">
-                      <option value="Mới">Mới</option>
-                      <option value="Đang xử lý">Đang xử lý</option>
-                      <option value="Hoàn tất">Hoàn tất</option>
-                    </select>
-                    <label>Phụ trách</label><input id="crm_task_owner" class="input" />
+                  <div class="row">
+                    <div class="col-6 field">
+                      <label for="crm_task_customer">ID Khách</label>
+                      <input id="crm_task_customer" class="input" />
+                    </div>
+                    <div class="col-6 field">
+                      <label for="crm_task_title">Tiêu đề</label>
+                      <input id="crm_task_title" class="input" />
+                    </div>
+                    <div class="col-4 field">
+                      <label for="crm_task_due">Hạn</label>
+                      <input id="crm_task_due" type="date" class="input" />
+                    </div>
+                    <div class="col-4 field">
+                      <label for="crm_task_status">Trạng thái</label>
+                      <select id="crm_task_status" class="input">
+                        <option value="Mới">Mới</option>
+                        <option value="Đang xử lý">Đang xử lý</option>
+                        <option value="Hoàn tất">Hoàn tất</option>
+                      </select>
+                    </div>
+                    <div class="col-4 field">
+                      <label for="crm_task_owner">Phụ trách</label>
+                      <input id="crm_task_owner" class="input" />
+                    </div>
                   </div>
                   <textarea id="crm_task_note" class="input" placeholder="Ghi chú"></textarea>
                 </div>
@@ -492,10 +531,19 @@
               <div class="card m16">
                 <div class="card-head">Đánh giá khách hàng</div>
                 <div class="card-body">
-                  <div class="row wrap">
-                    <label>ID Khách</label><input id="crm_rating_customer" class="input" />
-                    <label>Điểm</label><input id="crm_rating_score" class="input" />
-                    <label>Tiêu chí</label><input id="crm_rating_criteria" class="input" />
+                  <div class="row">
+                    <div class="col-4 field">
+                      <label for="crm_rating_customer">ID Khách</label>
+                      <input id="crm_rating_customer" class="input" />
+                    </div>
+                    <div class="col-4 field">
+                      <label for="crm_rating_score">Điểm</label>
+                      <input id="crm_rating_score" class="input" />
+                    </div>
+                    <div class="col-4 field">
+                      <label for="crm_rating_criteria">Tiêu chí</label>
+                      <input id="crm_rating_criteria" class="input" />
+                    </div>
                   </div>
                   <textarea id="crm_rating_note" class="input" placeholder="Nhận xét"></textarea>
                 </div>
@@ -551,9 +599,15 @@
           <div class="card">
             <div class="card-head">Thiết lập chung</div>
             <div class="card-body">
-              <div class="row wrap">
-                <label>Quỹ vốn</label><input id="cfg_fund" class="input" />
-                <label>Loại thanh toán</label><input id="cfg_paytypes" class="input" placeholder="gốc,lãi,phí" />
+              <div class="row">
+                <div class="col-6 field">
+                  <label for="cfg_fund">Quỹ vốn</label>
+                  <input id="cfg_fund" class="input" />
+                </div>
+                <div class="col-6 field">
+                  <label for="cfg_paytypes">Loại thanh toán</label>
+                  <input id="cfg_paytypes" class="input" placeholder="gốc,lãi,phí" />
+                </div>
               </div>
               <div class="m12">
                 <label class="checkbox-inline">
@@ -571,24 +625,35 @@
             <div class="card-head">Import / Update từ Google Sheets</div>
             <div class="card-body">
               <div class="row">
-                <label>Drive File ID</label>
-                <input id="imp_file" class="input" placeholder="1aBcD..." />
-                <label>Sheet name (tùy chọn)</label>
-                <input id="imp_sheet" class="input" placeholder="Tên sheet (nếu có)" />
+                <div class="col-6 field">
+                  <label for="imp_file">Drive File ID</label>
+                  <input id="imp_file" class="input" placeholder="1aBcD..." />
+                </div>
+                <div class="col-6 field">
+                  <label for="imp_sheet">Sheet name (tùy chọn)</label>
+                  <input id="imp_sheet" class="input" placeholder="Tên sheet (nếu có)" />
+                </div>
               </div>
               <div class="row">
-                <label>Bảng đích</label>
-                <select id="imp_table" class="input">
-                  <option value="CUSTOMERS">CUSTOMERS (KHÁCH HÀNG)</option>
-                  <option value="LOANS">LOANS (HỢP ĐỒNG)</option>
-                  <option value="PAYMENTS">PAYMENTS (THANH TOÁN)</option>
-                </select>
-                <label>Chế độ</label>
-                <select id="imp_mode" class="input">
-                  <option value="upsert">Upsert theo ID</option>
-                  <option value="append">Append</option>
-                </select>
-                <button id="imp_run" class="btn">Chạy Import</button>
+                <div class="col-4 field">
+                  <label for="imp_table">Bảng đích</label>
+                  <select id="imp_table" class="input">
+                    <option value="CUSTOMERS">CUSTOMERS (KHÁCH HÀNG)</option>
+                    <option value="LOANS">LOANS (HỢP ĐỒNG)</option>
+                    <option value="PAYMENTS">PAYMENTS (THANH TOÁN)</option>
+                  </select>
+                </div>
+                <div class="col-4 field">
+                  <label for="imp_mode">Chế độ</label>
+                  <select id="imp_mode" class="input">
+                    <option value="upsert">Upsert theo ID</option>
+                    <option value="append">Append</option>
+                  </select>
+                </div>
+                <div class="col-4 field">
+                  <label>&nbsp;</label>
+                  <button id="imp_run" class="btn">Chạy Import</button>
+                </div>
               </div>
               <div class="muted m8">
                 File nguồn cần có header trùng tên cột đích (ví dụ “Mã HĐ”, “ID Khách”, “Số tiền”…).
@@ -634,8 +699,8 @@
               <div class="card">
                 <div class="card-head">Gửi thử</div>
                 <div class="card-body">
-                  <div class="row wrap">
-                    <label>Chọn nhóm</label>
+                  <div class="field">
+                    <label for="tg_sel">Chọn nhóm</label>
                     <select id="tg_sel" class="input"></select>
                   </div>
                   <textarea id="tg_text" class="input" placeholder="Nội dung tin nhắn..."></textarea>
@@ -656,12 +721,12 @@
             <div class="card">
               <div class="card-head">Hiển thị</div>
               <div class="card-body">
-                <div class="row">
-                  <label>Định dạng thời gian</label>
+                <div class="field">
+                  <label for="acct_timefmt">Định dạng thời gian</label>
                   <input id="acct_timefmt" class="input" />
                 </div>
-                <div class="row">
-                  <label>Font</label>
+                <div class="field">
+                  <label for="acct_font">Font</label>
                   <input id="acct_font" class="input" />
                 </div>
               </div>
@@ -689,16 +754,26 @@
           <div class="box">
             <div class="head">Khách hàng</div>
             <div class="body">
-              <label>ID Khách (để trống nếu tạo mới)</label>
-              <input id="dlg_cus_id" />
-              <label>Tên</label>
-              <input id="dlg_cus_name" />
-              <label>SĐT</label>
-              <input id="dlg_cus_phone" />
-              <label>Email</label>
-              <input id="dlg_cus_email" />
-              <label>Ghi chú</label>
-              <textarea id="dlg_cus_note"></textarea>
+              <div class="field">
+                <label for="dlg_cus_id">ID Khách (để trống nếu tạo mới)</label>
+                <input id="dlg_cus_id" />
+              </div>
+              <div class="field">
+                <label for="dlg_cus_name">Tên</label>
+                <input id="dlg_cus_name" />
+              </div>
+              <div class="field">
+                <label for="dlg_cus_phone">SĐT</label>
+                <input id="dlg_cus_phone" />
+              </div>
+              <div class="field">
+                <label for="dlg_cus_email">Email</label>
+                <input id="dlg_cus_email" />
+              </div>
+              <div class="field">
+                <label for="dlg_cus_note">Ghi chú</label>
+                <textarea id="dlg_cus_note"></textarea>
+              </div>
             </div>
             <div class="foot">
               <button class="btn" onclick="document.getElementById('dlg_customer').close()">Đóng</button>
@@ -713,27 +788,55 @@
             <div class="head">Hợp đồng</div>
             <div class="body">
               <div class="row">
-                <label>Mã HĐ</label><input id="dlg_loan_id" />
-                <label>PL KH</label><input id="dlg_loan_plkh" />
+                <div class="col-6 field">
+                  <label for="dlg_loan_id">Mã HĐ</label>
+                  <input id="dlg_loan_id" />
+                </div>
+                <div class="col-6 field">
+                  <label for="dlg_loan_plkh">PL KH</label>
+                  <input id="dlg_loan_plkh" />
+                </div>
               </div>
               <div class="row">
-                <label>Khách hàng</label>
-                <select id="dlg_loan_cus_select"></select>
-                <input id="dlg_loan_cusid" placeholder="ID Khách (nếu không chọn ở dropdown)" />
+                <div class="col-6 field">
+                  <label for="dlg_loan_cus_select">Khách hàng</label>
+                  <select id="dlg_loan_cus_select"></select>
+                </div>
+                <div class="col-6 field">
+                  <label for="dlg_loan_cusid">ID Khách (nếu không chọn ở dropdown)</label>
+                  <input id="dlg_loan_cusid" placeholder="ID Khách (nếu không chọn ở dropdown)" />
+                </div>
               </div>
               <div class="row">
-                <label>Hình thức</label>
-                <select id="dlg_loan_type">
-                  <option>Cuốn chiếu</option>
-                  <option>Cuối kỳ</option>
-                </select>
-                <label>Số tiền</label><input id="dlg_loan_amount" />
-                <label>Lãi %/th</label><input id="dlg_loan_rate" />
-                <label>Kỳ hạn (tháng)</label><input id="dlg_loan_months" />
+                <div class="col-3 field">
+                  <label for="dlg_loan_type">Hình thức</label>
+                  <select id="dlg_loan_type">
+                    <option>Cuốn chiếu</option>
+                    <option>Cuối kỳ</option>
+                  </select>
+                </div>
+                <div class="col-3 field">
+                  <label for="dlg_loan_amount">Số tiền</label>
+                  <input id="dlg_loan_amount" />
+                </div>
+                <div class="col-3 field">
+                  <label for="dlg_loan_rate">Lãi %/th</label>
+                  <input id="dlg_loan_rate" />
+                </div>
+                <div class="col-3 field">
+                  <label for="dlg_loan_months">Kỳ hạn (tháng)</label>
+                  <input id="dlg_loan_months" />
+                </div>
               </div>
               <div class="row">
-                <label>Giải ngân</label><input id="dlg_loan_start" type="date" />
-                <label>Tất toán</label><input id="dlg_loan_close" type="date" />
+                <div class="col-6 field">
+                  <label for="dlg_loan_start">Giải ngân</label>
+                  <input id="dlg_loan_start" type="date" />
+                </div>
+                <div class="col-6 field">
+                  <label for="dlg_loan_close">Tất toán</label>
+                  <input id="dlg_loan_close" type="date" />
+                </div>
               </div>
             </div>
             <div class="foot">
