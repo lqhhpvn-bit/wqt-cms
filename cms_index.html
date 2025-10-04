@@ -745,7 +745,30 @@
       </main>
     </div>
 
-    <?!= include('cms_login'); ?>
+    <div id="dlg_login" class="modal modal-overlay">
+      <div class="box">
+        <div class="head">
+          <div class="title">Đăng nhập tài khoản nội bộ</div>
+        </div>
+        <div class="body">
+          <div class="field">
+            <label for="login_user">Tài khoản</label>
+            <input id="login_user" class="input" type="text" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="login_pass">Mật khẩu</label>
+            <input id="login_pass" class="input" type="password" autocomplete="current-password" />
+          </div>
+          <div class="muted" style="margin-top:8px">
+            Bạn cũng có thể đăng nhập Google (nếu email của bạn nằm trong danh sách cho phép).
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" onclick="closeLoginDialog()">Đóng</button>
+          <button class="btn primary" type="button" id="btn_login_do">Đăng nhập</button>
+        </div>
+      </div>
+    </div>
     <?!= include('cms_scripts'); ?>
   </body>
 </html>
