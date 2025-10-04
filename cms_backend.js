@@ -436,7 +436,7 @@ function listRecords(payload, page, q) {
 function saveRecord(payload) {
   var tbl = payload && payload.tableKey;
   var menuKey = _menuKeyForTable_(tbl);
-  mustHaveHybrid(payload, menuKey);
+  var ctx = mustHaveHybrid(payload, menuKey);
 
   payload = payload || {};
   var tableKey = payload.tableKey;
@@ -462,9 +462,10 @@ function saveRecord(payload) {
 
   var idVal = (record[idColName] || '').toString().trim();
 
-  var now = _now_(), me = _me_();
+  var now = _now_();
+  var actor = (ctx && ctx.principal) || (ctx && ctx.display) || _me_();
   if (hmap['Cập nhật']  !== undefined) rowArr[hmap['Cập nhật']]  = now;
-  if (hmap['Người sửa'] !== undefined) rowArr[hmap['Người sửa']] = me;
+  if (hmap['Người sửa'] !== undefined) rowArr[hmap['Người sửa']] = actor;
 
   if (!idVal) {
     var prefix = (tableKey === 'CUSTOMERS') ? 'VC' :
