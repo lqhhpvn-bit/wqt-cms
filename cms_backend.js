@@ -121,7 +121,7 @@ function getVisibleMenusForSession(payload){
   var keys = payload.keys || payload.allKeys || [];
   try {
     var ctx = _hybridGuard_(payload);
-    if (ctx.mode === 'local'){
+    if (ctx.mode === 'local' || ctx.mode === 'config'){
       return (ctx.menus && ctx.menus.length) ? ctx.menus : keys;
     }
     return getVisibleMenusForMe(keys);
@@ -208,6 +208,74 @@ function _accSheet_(){
   return {headers: vals[0], rows: vals.slice(1), sheet: sh};
 }
 function _accMap_(h){ var m={}; h.forEach((x,i)=>m[String(x).trim()]=i); return m; }
+
+/** Cấu hình tài khoản dành riêng cho trang Quản trị cấu hình */
+const CFG_SESSION_PREFIX = 'CFGSESS::';
+
+function _ensureConfigAccountSheet_(){
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName('CONFIG_ACCOUNTS');
+  var headers = ['User','Display','PasswordHash','Salt','Active','Menus'];
+  if (!sh){
+    sh = ss.insertSheet('CONFIG_ACCOUNTS');
+  }
+  var needsHeader = sh.getLastRow() < 1;
+  if (!needsHeader){
+    var curHead = sh.getRange(1,1,1,headers.length).getDisplayValues()[0];
+    for (var i=0;i<headers.length;i++){
+      if (String(curHead[i]||'').trim() !== headers[i]){ needsHeader = true; break; }
+    }
+  }
+  if (needsHeader){
+    sh.getRange(1,1,1,headers.length).setValues([headers]);
+  }
+  sh.setFrozenRows(1);
+
+  var lr = sh.getLastRow();
+  var menusDefault = 'schema,account';
+  var hasAdmin = false;
+  if (lr > 1){
+    var rng = sh.getRange(2,1,lr-1,headers.length);
+    var rows = rng.getDisplayValues();
+    var updated = false;
+    rows.forEach(function(r, idx){
+      if (String(r[0]||'').trim().toLowerCase() === 'cfgadmin'){
+        hasAdmin = true;
+        if (!r[1]){ r[1] = 'Quản trị cấu hình'; updated = true; }
+        if (!r[4]){ r[4] = 'TRUE'; updated = true; }
+        if (!r[5]){ r[5] = menusDefault; updated = true; }
+        if (!r[2] || !r[3]){
+          var saltNew = Utilities.getUuid();
+          var hashNew = _hash256b64_('cfg1234' + saltNew);
+          r[2] = hashNew;
+          r[3] = saltNew;
+          updated = true;
+        }
+      }
+    });
+    if (updated){ rng.setValues(rows); }
+  }
+  if (!hasAdmin){
+    var salt = Utilities.getUuid();
+    var hash = _hash256b64_('cfg1234' + salt);
+    sh.appendRow(['cfgadmin','Quản trị cấu hình', hash, salt, 'TRUE', menusDefault]);
+  }
+  return sh;
+}
+
+function _cfgAccSheet_(){
+  var sh = _ensureConfigAccountSheet_();
+  var lr = sh.getLastRow();
+  var lc = Math.max(sh.getLastColumn(), 6);
+  if (lr < 1){
+    sh.getRange(1,1,1,6).setValues([['User','Display','PasswordHash','Salt','Active','Menus']]);
+    lr = sh.getLastRow();
+  }
+  var vals = sh.getRange(1,1,lr,lc).getDisplayValues();
+  return { headers: vals[0], rows: vals.slice(1), sheet: sh };
+}
+
+function _cfgAccMap_(h){ var m={}; h.forEach(function(x,i){ m[String(x).trim()] = i; }); return m; }
 
 /** Cache session token */
 function _sessCache_(){ return CacheService.getScriptCache(); }
@@ -358,6 +426,66 @@ function local_logout_api(payload){
   var token = payload.token || payload.session || '';
   return local_logout(token);
 }
+
+/** Đăng nhập dành riêng cho trang quản trị cấu hình */
+function _configSessionKey_(token){ return CFG_SESSION_PREFIX + token; }
+
+function _configSessionFromToken_(token){
+  if(!token) return null;
+  var txt = _sessCache_().get(_configSessionKey_(token));
+  if(!txt) return null;
+  try {
+    var data = JSON.parse(txt);
+    data.mode = 'config';
+    return data;
+  } catch(e){
+    return null;
+  }
+}
+
+function config_local_login_api(payload){
+  payload = payload || {};
+  var user = String(payload.user || payload.username || payload.account || '').trim();
+  if (!user) throw new Error('Thiếu user');
+  var pass = String(payload.password || payload.pass || payload.pw || '');
+
+  var s = _cfgAccSheet_();
+  var H = _cfgAccMap_(s.headers);
+  var idxUser = H['User'], idxDisp = H['Display'], idxHash = H['PasswordHash'], idxSalt = H['Salt'], idxActive = H['Active'], idxMenus = H['Menus'];
+
+  var row = null;
+  (s.rows||[]).forEach(function(r){
+    if (row) return;
+    if (String(r[idxUser]||'').trim().toLowerCase() === user.toLowerCase()) row = r;
+  });
+  if (!row) throw new Error('Sai tài khoản hoặc mật khẩu.');
+  if (String(row[idxActive]||'').toLowerCase() === 'false') throw new Error('Tài khoản đã bị khoá.');
+
+  var salt = row[idxSalt] || '';
+  var expect = row[idxHash] || '';
+  var got = _hash256b64_(String(pass) + salt);
+  if (got !== expect) throw new Error('Sai tài khoản hoặc mật khẩu.');
+
+  var token = _randToken_();
+  var menus = String(row[idxMenus]||'').split(',').map(function(x){ return String(x||'').trim(); }).filter(Boolean);
+  if (!menus.length) menus = ['schema'];
+  var payloadOut = {
+    user: row[idxUser],
+    display: row[idxDisp] || row[idxUser],
+    menus: menus,
+    exp: _toISO_(_expInMinutes_(180))
+  };
+  _sessCache_().put(_configSessionKey_(token), JSON.stringify(payloadOut), 60*180);
+  return { ok:true, token: token, display: payloadOut.display, menus: payloadOut.menus };
+}
+
+function config_local_logout_api(payload){
+  payload = payload || {};
+  var token = payload.token || payload.session || '';
+  if (!token) return { ok:true };
+  _sessCache_().remove(_configSessionKey_(token));
+  return { ok:true };
+}
 function _sessionFromToken_(token){
   if(!token) return null;
   var txt=_sessCache_().get('SESS::'+token); if(!txt) return null;
@@ -373,12 +501,14 @@ function _hybridGuard_(payload){
   var token = payload.session || payload.token;
   var sess = _sessionFromToken_(token);
   if (sess && Array.isArray(sess.menus)) return {mode:'local', principal: sess.user, menus: sess.menus};
+  var cfgSess = _configSessionFromToken_(token);
+  if (cfgSess && Array.isArray(cfgSess.menus)) return {mode:'config', principal: cfgSess.user, menus: cfgSess.menus};
   throw new Error('Bạn chưa đăng nhập hoặc không có quyền.');
 }
 function mustHaveHybrid(payload, menuKey){
   var ctx=_hybridGuard_(payload||{});
   if (menuKey){
-    if (ctx.mode==='local'){
+    if (ctx.mode==='local' || ctx.mode==='config'){
       if (!ctx.menus || ctx.menus.indexOf(menuKey)===-1) throw new Error('Không có quyền vào mục: '+menuKey);
     } else {
       try{ mustHave(menuKey); }catch(e){ /* nếu chưa set role theo email, cho qua */ }
@@ -856,10 +986,25 @@ function getRemindersToday(todayISO){
 function getRemindersToday_api(payload){ mustHaveHybrid(payload, 'loanmgr'); return getRemindersToday(payload.todayISO); }
 
 /** ===================== KPI DASHBOARD ===================== */
+const DASHBOARD_KPI_KEYS = ['fund','cashflow','customers','loans'];
+function _normalizeKpiLayout_(layout){
+  layout = layout || {};
+  var orderIn = Array.isArray(layout.order) ? layout.order.filter(function(k){ return DASHBOARD_KPI_KEYS.indexOf(k)!==-1; }) : [];
+  DASHBOARD_KPI_KEYS.forEach(function(k){ if (orderIn.indexOf(k) === -1) orderIn.push(k); });
+  var hiddenIn = Array.isArray(layout.hidden) ? layout.hidden.filter(function(k){ return DASHBOARD_KPI_KEYS.indexOf(k)!==-1; }) : [];
+  return { order: orderIn, hidden: hiddenIn };
+}
 function getAppConfig(){
   var p = _getProps_();
   var payTypesCsv = p.getProperty('PAY_TYPES') || 'gốc,lãi,phí';
   var showKpi = String(p.getProperty('SHOW_KPI') || 'true').toLowerCase();
+  var layoutRaw = p.getProperty('KPI_LAYOUT');
+  var layout;
+  try {
+    layout = layoutRaw ? _normalizeKpiLayout_(JSON.parse(layoutRaw)) : _normalizeKpiLayout_({});
+  } catch(e){
+    layout = _normalizeKpiLayout_({});
+  }
   return {
     fund: Number(p.getProperty('FUND') || 0),
     payTypes: payTypesCsv.split(',').map(s=>String(s||'').trim()).filter(Boolean),
@@ -868,7 +1013,8 @@ function getAppConfig(){
     telegram: {
       bot   : p.getProperty('TG_BOT')  || '',
       chatId: p.getProperty('TG_CHAT') || ''
-    }
+    },
+    dashboardKpiConfig: layout
   };
 }
 function setAppConfig(payload){
@@ -886,6 +1032,10 @@ function setAppConfig(payload){
   }
   if (typeof payload.allowGoogleSso !== 'undefined'){
     p.setProperty('ALLOW_GOOGLE_SSO', payload.allowGoogleSso ? 'true' : 'false');
+  }
+  if (typeof payload.dashboardKpiConfig !== 'undefined'){
+    var layout = _normalizeKpiLayout_(payload.dashboardKpiConfig || {});
+    p.setProperty('KPI_LAYOUT', JSON.stringify(layout));
   }
   if (payload.telegram){
     if (typeof payload.telegram.bot !== 'undefined'){ p.setProperty('TG_BOT', String(payload.telegram.bot||'')); }
@@ -1453,6 +1603,8 @@ function whoami(payload){
   var token = payload && (payload.session || payload.token);
   var sess  = _sessionFromToken_(token);
   if (sess) return { ok:true, mode:'local', principal: sess.user, display: sess.display, menus: sess.menus };
+  var cfgSess = _configSessionFromToken_(token);
+  if (cfgSess) return { ok:true, mode:'config', principal: cfgSess.user, display: cfgSess.display || cfgSess.user, menus: cfgSess.menus };
   return { ok:false };
 }
 

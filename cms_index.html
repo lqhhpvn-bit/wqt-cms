@@ -56,7 +56,7 @@
           <h2>Tổng quan</h2>
 
           <div id="dashboard_kpis" class="kpi-grid4">
-            <div class="kpi-panel">
+            <div class="kpi-panel" data-kpi="fund">
               <div class="kpi-panel-title">Nguồn vốn</div>
               <div class="kpi-panel-body">
                 <div class="kpi">
@@ -69,7 +69,7 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-panel">
+            <div class="kpi-panel" data-kpi="cashflow">
               <div class="kpi-panel-title">Dòng tiền</div>
               <div class="kpi-panel-body">
                 <div class="kpi">
@@ -90,7 +90,7 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-panel">
+            <div class="kpi-panel" data-kpi="customers">
               <div class="kpi-panel-title">Khách hàng</div>
               <div class="kpi-panel-body">
                 <div class="kpi">
@@ -103,7 +103,7 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-panel">
+            <div class="kpi-panel" data-kpi="loans">
               <div class="kpi-panel-title">Hợp đồng</div>
               <div class="kpi-panel-body">
                 <div class="kpi">
@@ -269,95 +269,93 @@
         <section id="view-loanmgr" class="view hidden">
           <h2>Quản lý khoản vay / Thanh toán</h2>
 
-          <div class="card">
-            <div class="card-head">Phiếu thanh toán (theo kỳ hoặc khoảng ngày)</div>
-            <div class="card-body">
-              <div class="grid-2">
-                <div>
-                  <div class="toolbar">
-                    <input id="slip_mahd" class="input" placeholder="Nhập Mã HĐ" />
-                    <label>Kỳ</label>
-                    <select id="slip_k_select" class="input">
-                      <option value="">(Tự động)</option>
-                    </select>
-                    <button id="slip_btn" class="btn">Xem phiếu (kỳ)</button>
+          <div class="loanmgr-layout">
+            <div class="loanmgr-left">
+              <div class="card loanmgr-slip">
+                <div class="card-head">Phiếu thanh toán</div>
+                <div class="card-body">
+                  <div class="slip-control">
+                    <div class="slip-row">
+                      <input id="slip_mahd" class="input" placeholder="Nhập Mã HĐ" />
+                      <label for="slip_k_select">Kỳ</label>
+                      <select id="slip_k_select" class="input">
+                        <option value="">(Tự động)</option>
+                      </select>
+                      <button id="slip_btn" class="btn">Xem phiếu (kỳ)</button>
+                    </div>
+                    <div class="slip-row">
+                      <label for="slip_from" class="slip-range-label">Theo khoảng ngày</label>
+                      <input id="slip_from" type="date" class="input" />
+                      <span class="slip-range-sep">—</span>
+                      <input id="slip_to" type="date" class="input" />
+                      <button id="slip_btn_range" class="btn">Xem phiếu (khoảng ngày)</button>
+                    </div>
                   </div>
 
-                  <div class="toolbar">
-                    <label>Tính theo khoảng ngày:</label>
-                    <input id="slip_from" type="date" class="input" />
-                    <span>—</span>
-                    <input id="slip_to" type="date" class="input" />
-                    <button id="slip_btn_range" class="btn">Xem phiếu (khoảng ngày)</button>
-                  </div>
-
-                  <div id="slip_card" class="slip card hideable">
-                    <div class="card-head" id="slip_title">Phiếu thanh toán</div>
-                    <div class="card-body">
-                      <div class="grid-2">
-                        <div>
-                          <div><b>Mã HĐ:</b> <span id="slip_id"></span></div>
-                          <div><b>Tên KH:</b> <span id="slip_name"></span></div>
-                          <div><b>Hình thức:</b> <span id="slip_type"></span></div>
-                        </div>
-                        <div>
-                          <div><b>Kỳ:</b> <span id="slip_k"></span></div>
-                          <div><b>Từ:</b> <span id="slip_from_txt"></span></div>
-                          <div><b>Đến:</b> <span id="slip_to_txt"></span></div>
-                        </div>
+                  <div id="slip_card" class="slip-summary hideable">
+                    <div class="slip-summary-head">
+                      <div id="slip_title" class="slip-summary-title">Phiếu thanh toán</div>
+                      <button id="slip_tg_btn" class="btn ghost">Gửi Telegram (ảnh)</button>
+                    </div>
+                    <div class="slip-summary-meta">
+                      <div>
+                        <div><span class="meta-label">Mã HĐ:</span> <span id="slip_id"></span></div>
+                        <div><span class="meta-label">Tên KH:</span> <span id="slip_name"></span></div>
+                        <div><span class="meta-label">Hình thức:</span> <span id="slip_type"></span></div>
                       </div>
-                      <hr />
-                      <div class="grid-3">
-                        <div>
-                          <div>Gốc đến hạn</div>
-                          <div class="num" id="slip_goc_due">0</div>
-                          <div class="muted">Đã thu: <span id="slip_goc_paid">0</span></div>
-                        </div>
-                        <div>
-                          <div>Lãi đến hạn</div>
-                          <div class="num" id="slip_lai_due">0</div>
-                          <div class="muted">Đã thu: <span id="slip_lai_paid">0</span></div>
-                        </div>
-                        <div>
-                          <div>Tổng</div>
-                          <div class="num" id="slip_total_due">0</div>
-                          <div class="muted">Đã thu: <span id="slip_total_paid">0</span></div>
-                        </div>
-                      </div>
-                      <div class="alert info m8">
-                        Còn phải thu: <b id="slip_total_remain">0</b>
+                      <div>
+                        <div><span class="meta-label">Kỳ:</span> <span id="slip_k"></span></div>
+                        <div><span class="meta-label">Từ:</span> <span id="slip_from_txt"></span></div>
+                        <div><span class="meta-label">Đến:</span> <span id="slip_to_txt"></span></div>
                       </div>
                     </div>
-                    <div class="card-foot">
-                      <button id="slip_tg_btn" class="btn">Gửi Telegram (ảnh)</button>
+                    <div class="slip-summary-grid">
+                      <div class="slip-summary-item">
+                        <div class="title">Gốc đến hạn</div>
+                        <div class="value" id="slip_goc_due">0</div>
+                        <div class="muted">Đã thu: <span id="slip_goc_paid">0</span></div>
+                      </div>
+                      <div class="slip-summary-item">
+                        <div class="title">Lãi đến hạn</div>
+                        <div class="value" id="slip_lai_due">0</div>
+                        <div class="muted">Đã thu: <span id="slip_lai_paid">0</span></div>
+                      </div>
+                      <div class="slip-summary-item">
+                        <div class="title">Tổng</div>
+                        <div class="value" id="slip_total_due">0</div>
+                        <div class="muted">Đã thu: <span id="slip_total_paid">0</span></div>
+                      </div>
+                    </div>
+                    <div class="slip-summary-footer">
+                      Còn phải thu: <b id="slip_total_remain">0</b>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Lịch kỳ -->
-                <div>
-                  <div class="card">
-                    <div class="card-head">Kỳ sắp tới (12 kỳ)</div>
-                    <div class="card-body">
-                      <table class="tbl">
-                        <thead><tr><th>Kỳ</th><th>Đến hạn</th><th>Gốc</th><th>Lãi</th><th>Tổng</th></tr></thead>
-                        <tbody id="upcoming_rows"></tbody>
-                      </table>
+            <div class="loanmgr-right">
+              <div class="card upcoming-card">
+                <div class="card-head">Kỳ sắp tới (12 kỳ)</div>
+                <div class="card-body">
+                  <table class="tbl">
+                    <thead><tr><th>Kỳ</th><th>Đến hạn</th><th>Gốc</th><th>Lãi</th><th>Tổng</th></tr></thead>
+                    <tbody id="upcoming_rows"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card pay-card">
+                <div class="card-head">Thanh toán</div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <input id="pay_id" class="input" placeholder="PaymentID (để sửa/xoá)" />
+                    </div>
+                    <div class="col-6">
+                      <input id="pay_loan" class="input" placeholder="Mã HĐ" />
                     </div>
                   </div>
-
-                  <!-- Payment form -->
-                  <div class="card">
-                    <div class="card-head">Thanh toán</div>
-                    <div class="card-body">
-                      <div class="row">
-                        <div class="col-6">
-                          <input id="pay_id" class="input" placeholder="PaymentID (để sửa/xoá)" />
-                        </div>
-                        <div class="col-6">
-                          <input id="pay_loan" class="input" placeholder="Mã HĐ" />
-                        </div>
-                      </div>
                       <div class="row">
                         <div class="col-4 field">
                           <label for="pay_date">Ngày</label>
@@ -614,6 +612,11 @@
                   <input id="cfg_show_kpi" type="checkbox" />
                   <span>Hiển thị KPI trên trang Tổng quan</span>
                 </label>
+              </div>
+              <div class="kpi-config-wrap">
+                <div class="sub-title">KPI hiển thị</div>
+                <div class="muted">Bật/tắt từng KPI và dùng mũi tên để sắp xếp thứ tự hiển thị ở trang Tổng quan.</div>
+                <div id="kpi_config_list" class="kpi-config-list"></div>
               </div>
             </div>
             <div class="card-foot">

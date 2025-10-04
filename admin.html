@@ -845,7 +845,7 @@
       }, showErr);
     }
 
-    const SESS_KEY = 'WQT_SESSION';
+    const SESS_KEY = 'WQT_CFG_SESSION';
     const getToken = () => localStorage.getItem(SESS_KEY) || '';
     const setToken = (t) => t ? localStorage.setItem(SESS_KEY, t) : localStorage.removeItem(SESS_KEY);
     const withSession = (payload = {}) => {
@@ -925,7 +925,7 @@
       const u = (document.getElementById('login_user')?.value || '').trim();
       const p = document.getElementById('login_pass')?.value || '';
       if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
-      runApi('local_login_api', { user: u, password: p }, res => {
+      runApi('config_local_login_api', { user: u, password: p }, res => {
         if (!handleLoginSuccess(res, u)) alert('Đăng nhập thất bại.');
       }, e => alert(e?.message || e));
     }
@@ -946,7 +946,7 @@
 
     function logoutAll(){
       const t = getToken();
-      runApi('local_logout_api', { token: t }, () => {
+      runApi('config_local_logout_api', { token: t }, () => {
         setToken('');
         setAuthState(false);
         showLoginDialog();
