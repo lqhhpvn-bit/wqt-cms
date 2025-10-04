@@ -111,10 +111,45 @@ function applySchema(){
   return { ok:true };
 }
 
-function api_schema_list(){ return readSchema_(); }
-function api_schema_add(t,f,l,y,r,e,d){ return schemaAddField(t,f,l,y,r,e,d); }
-function api_schema_delete(t,f){ return schemaDeleteField(t,f); }
-function api_schema_apply(){ return applySchema(); }
+function api_schema_list(payload){
+  payload = payload || {};
+  mustHaveHybrid(payload, 'schema');
+  return readSchema_();
+}
+function api_schema_add(payload, f, l, y, r, e, d){
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)){
+    return api_schema_add({ table: payload, field: f, label: l, type: y, required: r, enumValues: e, defaultValue: d });
+  }
+  mustHaveHybrid(payload, 'schema');
+  const table = String(payload.table || payload.tbl || payload.tableKey || '').trim();
+  const field = String(payload.field || payload.name || '').trim();
+  const label = (payload.label !== undefined && payload.label !== null) ? String(payload.label) : (l || field);
+  const type = String(payload.type || payload.datatype || y || 'string');
+  let reqVal = payload.required;
+  if (reqVal === undefined) reqVal = payload.req || payload.isRequired || r;
+  const required = (typeof reqVal === 'string') ? !/^(false|0|no|off)$/i.test(reqVal) : !!reqVal;
+  let enumVals = payload.enumValues;
+  if (enumVals === undefined) enumVals = payload.enum || payload.options || e;
+  const enumCsv = (enumVals !== undefined && enumVals !== null) ? String(enumVals) : '';
+  let defVal = payload.defaultValue;
+  if (defVal === undefined) defVal = payload.default || payload.def || d;
+  const defOut = (defVal !== undefined && defVal !== null) ? defVal : '';
+  return schemaAddField(table, field, label, type, required, enumCsv, defOut);
+}
+function api_schema_delete(payload, f){
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)){
+    return api_schema_delete({ table: payload, field: f });
+  }
+  mustHaveHybrid(payload, 'schema');
+  const table = payload.table || payload.tbl || payload.tableKey;
+  const field = payload.field || payload.name;
+  return schemaDeleteField(table, field);
+}
+function api_schema_apply(payload){
+  payload = payload || {};
+  mustHaveHybrid(payload, 'schema');
+  return applySchema();
+}
 
 /* ===== RÀ SOÁT & KHỞI TẠO SCHEMA THEO UI ===== */
 function seedSchema_(){
