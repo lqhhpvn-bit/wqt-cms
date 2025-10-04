@@ -20,9 +20,24 @@
     <div class="app">
       <div id="login_blocker" class="login-blocker">
         <div class="login-blocker-card">
-          <div class="login-blocker-title">Vui lòng đăng nhập</div>
-          <p>Đăng nhập để xem và thao tác dữ liệu quản trị. Liên hệ quản trị viên nếu bạn chưa có tài khoản.</p>
-          <button class="btn primary" onclick="openLogin()">Đăng nhập ngay</button>
+          <div>
+            <div class="login-blocker-title">Vui lòng đăng nhập</div>
+            <p class="muted" style="margin:0">Đăng nhập để xem và thao tác dữ liệu quản trị. Liên hệ quản trị viên nếu bạn chưa có tài khoản.</p>
+          </div>
+          <div class="login-form">
+            <div class="login-field">
+              <label for="login_user">Tài khoản</label>
+              <input id="login_user" class="input" type="text" autocomplete="username" />
+            </div>
+            <div class="login-field">
+              <label for="login_pass">Mật khẩu</label>
+              <input id="login_pass" class="input" type="password" autocomplete="current-password" />
+            </div>
+            <div class="login-actions">
+              <button class="btn primary" type="button" id="btn_login_do">Đăng nhập</button>
+            </div>
+            <div class="muted" style="font-size:12px">Bạn cũng có thể đăng nhập Google (nếu email của bạn nằm trong danh sách cho phép).</div>
+          </div>
         </div>
       </div>
 
@@ -271,23 +286,34 @@
 
           <div class="loanmgr-layout">
             <div class="loanmgr-left">
-              <div class="card loanmgr-slip">
+            <div class="card loanmgr-slip">
                 <div class="card-head">Phiếu thanh toán</div>
                 <div class="card-body">
-                  <div class="slip-control">
-                    <div class="slip-row">
+                  <div class="slip-filters slip-filters--primary">
+                    <div class="slip-field">
+                      <label for="slip_mahd">Mã HĐ</label>
                       <input id="slip_mahd" class="input" placeholder="Nhập Mã HĐ" />
+                    </div>
+                    <div class="slip-field">
                       <label for="slip_k_select">Kỳ</label>
                       <select id="slip_k_select" class="input">
                         <option value="">(Tự động)</option>
                       </select>
+                    </div>
+                    <div class="slip-actions">
                       <button id="slip_btn" class="btn">Xem phiếu (kỳ)</button>
                     </div>
-                    <div class="slip-row">
-                      <label for="slip_from" class="slip-range-label">Theo khoảng ngày</label>
+                  </div>
+                  <div class="slip-filters slip-filters--range">
+                    <div class="slip-field">
+                      <label for="slip_from">Từ ngày</label>
                       <input id="slip_from" type="date" class="input" />
-                      <span class="slip-range-sep">—</span>
+                    </div>
+                    <div class="slip-field">
+                      <label for="slip_to">Đến ngày</label>
                       <input id="slip_to" type="date" class="input" />
+                    </div>
+                    <div class="slip-actions">
                       <button id="slip_btn_range" class="btn">Xem phiếu (khoảng ngày)</button>
                     </div>
                   </div>
@@ -851,30 +877,6 @@
       </main>
     </div>
 
-    <div id="dlg_login" class="modal modal-overlay">
-      <div class="box">
-        <div class="head">
-          <div class="title">Đăng nhập tài khoản nội bộ</div>
-        </div>
-        <div class="body">
-          <div class="field">
-            <label for="login_user">Tài khoản</label>
-            <input id="login_user" class="input" type="text" autocomplete="username" />
-          </div>
-          <div class="field">
-            <label for="login_pass">Mật khẩu</label>
-            <input id="login_pass" class="input" type="password" autocomplete="current-password" />
-          </div>
-          <div class="muted" style="margin-top:8px">
-            Bạn cũng có thể đăng nhập Google (nếu email của bạn nằm trong danh sách cho phép).
-          </div>
-        </div>
-        <div class="foot">
-          <button class="btn" type="button" onclick="closeLoginDialog()">Đóng</button>
-          <button class="btn primary" type="button" id="btn_login_do">Đăng nhập</button>
-        </div>
-      </div>
-    </div>
     <?!= include('cms_scripts'); ?>
   </body>
 </html>

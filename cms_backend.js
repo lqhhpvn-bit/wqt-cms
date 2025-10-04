@@ -63,6 +63,35 @@ function _getSheetValues_(sheetName){
 }
 function _headerMap_(row1) { var map={}; row1.forEach(function(h,i){ map[String(h).trim()] = i; }); return map; }
 function _pick_(row, idx){ return (idx!=null && idx>=0) ? row[idx] : ''; }
+function _findHeaderIndex_(headers, map, candidates, partials){
+  headers = headers || [];
+  map = map || {};
+  candidates = candidates || [];
+  for (var i=0; i<candidates.length; i++){
+    var name = candidates[i];
+    if (name == null) continue;
+    var direct = map[name];
+    if (direct !== undefined) return direct;
+    var trimmed = String(name).trim();
+    if (trimmed && map[trimmed] !== undefined) return map[trimmed];
+  }
+  var lowerHeaders = headers.map(function(h){ return String(h||'').trim().toLowerCase(); });
+  for (var j=0; j<candidates.length; j++){
+    var cand = String(candidates[j]||'').trim().toLowerCase();
+    if (!cand) continue;
+    var exact = lowerHeaders.indexOf(cand);
+    if (exact !== -1) return exact;
+  }
+  partials = partials || [];
+  for (var p=0; p<partials.length; p++){
+    var needle = String(partials[p]||'').trim().toLowerCase();
+    if (!needle) continue;
+    for (var h=0; h<lowerHeaders.length; h++){
+      if (lowerHeaders[h].indexOf(needle) !== -1) return h;
+    }
+  }
+  return undefined;
+}
 
 /** ====== ID helpers (VC000001 / HD000001 / PAY000001) ====== */
 function _nextSeqId_(sh, idIdx, prefix, width) {
@@ -1051,7 +1080,15 @@ function getDashboardKpis_api(payload){
 
   // loans
   var L = _getSheetValues_('HỢP ĐỒNG'); var LH=_headerMap_(L.headers);
-  var idxAmt = LH['Số tiền vay'] ?? LH['Gốc'] ?? LH['Principal'];
+  var idxAmt = LH['Số tiền vay'];
+  if (idxAmt === undefined) idxAmt = LH['Gốc'];
+  if (idxAmt === undefined) idxAmt = LH['Principal'];
+  if (idxAmt === undefined){
+    idxAmt = _findHeaderIndex_(L.headers, LH,
+      ['Số tiền vay','Gốc','Principal','Số tiền','Số tiền giải ngân','Giải ngân'],
+      ['số tiền','giải ngân']
+    );
+  }
   var idxCus = LH['ID Khách'] ?? LH['IDVC'];
   var idxSta = LH['Trạng thái'];
   var idxStart = LH['Ngày giải ngân'] ?? LH['Bắt đầu'] ?? LH['StartDate'];
