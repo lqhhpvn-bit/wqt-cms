@@ -20,7 +20,49 @@ function _endOfDay_(d){ var x=new Date(d); x.setHours(23,59,59,999); return x; }
 function _endOfPrevDay_(d){ var x=new Date(d); x.setDate(x.getDate()-1); x.setHours(23,59,59,999); return x; }
 function _addMonths_(d, n){ var x=new Date(d); x.setMonth(x.getMonth()+Number(n||0)); return x; }
 function _monthsDiff_(from, to){ return (to.getFullYear()-from.getFullYear())*12 + (to.getMonth()-from.getMonth()); }
-function _toNum_(v){ var n = Number((v||'').toString().replace(/[^\d\.\-]/g,'')); return isNaN(n)?0:n; }
+function _toNum_(v){
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'number') return isNaN(v) ? 0 : v;
+  var s = String(v).trim();
+  if (!s) return 0;
+
+  // loại bỏ khoảng trắng (kể cả nbsp) và các ký tự không liên quan
+  s = s.replace(/[\s\u00A0]+/g, '');
+  var negative = false;
+  if (s[0] === '-') { negative = true; s = s.slice(1); }
+  s = s.replace(/[^0-9,\.]/g, '');
+
+  var commaCount = (s.match(/,/g) || []).length;
+  var dotCount   = (s.match(/\./g) || []).length;
+
+  if (commaCount && dotCount){
+    // Nếu có cả , và . → giả định dấu sau cùng là phần thập phân
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')){
+      s = s.replace(/\./g, '');
+      s = s.replace(/,/g, '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (commaCount){
+    if (commaCount === 1 && s.split(',')[1] && s.split(',')[1].length <= 2){
+      s = s.replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (dotCount){
+    if (dotCount === 1 && s.split('.')[1] && s.split('.')[1].length <= 2){
+      // giữ lại dấu . làm phần thập phân
+    } else {
+      s = s.replace(/\./g, '');
+    }
+  }
+
+  s = s.replace(/[^0-9\.]/g, '');
+  if (!s) return 0;
+  var n = Number(s);
+  if (isNaN(n)) return 0;
+  return negative ? -n : n;
+}
 function _fmtMoney_(n){
   var num = Number(n||0);
   if (isNaN(num)) num = 0;
@@ -312,6 +354,49 @@ function _cfgAccSheet_(){
 
 function _cfgAccMap_(h){ var m={}; h.forEach(function(x,i){ m[String(x).trim()] = i; }); return m; }
 
+function _findAccountForConfig_(user){
+  user = String(user||'').trim().toLowerCase();
+  if (!user) return null;
+
+  var cfg = _cfgAccSheet_();
+  var Hc  = _cfgAccMap_(cfg.headers);
+  var idxUser = Hc['User'], idxDisp = Hc['Display'], idxHash = Hc['PasswordHash'], idxSalt = Hc['Salt'], idxActive = Hc['Active'], idxMenus = Hc['Menus'];
+  for (var i=0;i<(cfg.rows||[]).length;i++){
+    var row = cfg.rows[i];
+    if (String(row[idxUser]||'').trim().toLowerCase() === user){
+      return {
+        source: 'config',
+        user: row[idxUser],
+        display: row[idxDisp] || row[idxUser],
+        hash: row[idxHash] || '',
+        salt: row[idxSalt] || '',
+        active: String(row[idxActive]||'').toLowerCase() !== 'false',
+        menus: String(row[idxMenus]||'').split(',').map(function(x){ return String(x||'').trim().toLowerCase(); }).filter(Boolean)
+      };
+    }
+  }
+
+  var main = _accSheet_();
+  var Hm   = _accMap_(main.headers);
+  var iUser = Hm['User'], iDisp = Hm['Display'], iHash = Hm['PasswordHash'], iSalt = Hm['Salt'], iMenus = Hm['Menus'], iAct = Hm['Active'];
+  for (var j=0;j<(main.rows||[]).length;j++){
+    var rowM = main.rows[j];
+    if (String(rowM[iUser]||'').trim().toLowerCase() === user){
+      return {
+        source: 'main',
+        user: rowM[iUser],
+        display: rowM[iDisp] || rowM[iUser],
+        hash: rowM[iHash] || '',
+        salt: rowM[iSalt] || '',
+        active: String(rowM[iAct]||'').toLowerCase() !== 'false',
+        menus: String(rowM[iMenus]||'').split(',').map(function(x){ return String(x||'').trim().toLowerCase(); }).filter(Boolean)
+      };
+    }
+  }
+
+  return null;
+}
+
 /** Cache session token */
 function _sessCache_(){ return CacheService.getScriptCache(); }
 function _randToken_(){ return Utilities.getUuid().replace(/-/g,''); }
@@ -484,29 +569,28 @@ function config_local_login_api(payload){
   if (!user) throw new Error('Thiếu user');
   var pass = String(payload.password || payload.pass || payload.pw || '');
 
-  var s = _cfgAccSheet_();
-  var H = _cfgAccMap_(s.headers);
-  var idxUser = H['User'], idxDisp = H['Display'], idxHash = H['PasswordHash'], idxSalt = H['Salt'], idxActive = H['Active'], idxMenus = H['Menus'];
+  var account = _findAccountForConfig_(user);
+  if (!account) throw new Error('Sai tài khoản hoặc mật khẩu.');
+  if (!account.active) throw new Error('Tài khoản đã bị khoá.');
 
-  var row = null;
-  (s.rows||[]).forEach(function(r){
-    if (row) return;
-    if (String(r[idxUser]||'').trim().toLowerCase() === user.toLowerCase()) row = r;
-  });
-  if (!row) throw new Error('Sai tài khoản hoặc mật khẩu.');
-  if (String(row[idxActive]||'').toLowerCase() === 'false') throw new Error('Tài khoản đã bị khoá.');
-
-  var salt = row[idxSalt] || '';
-  var expect = row[idxHash] || '';
+  var salt = account.salt || '';
+  var expect = account.hash || '';
   var got = _hash256b64_(String(pass) + salt);
   if (got !== expect) throw new Error('Sai tài khoản hoặc mật khẩu.');
 
-  var token = _randToken_();
-  var menus = String(row[idxMenus]||'').split(',').map(function(x){ return String(x||'').trim(); }).filter(Boolean);
+  var menus = (account.menus || []).slice();
+  if (account.source === 'main'){
+    menus = menus.filter(function(m){ return m === 'schema' || m === 'account'; });
+  }
   if (!menus.length) menus = ['schema'];
+  var uniqueMenus = [];
+  menus.forEach(function(m){ if (uniqueMenus.indexOf(m) === -1) uniqueMenus.push(m); });
+  menus = uniqueMenus;
+
+  var token = _randToken_();
   var payloadOut = {
-    user: row[idxUser],
-    display: row[idxDisp] || row[idxUser],
+    user: account.user,
+    display: account.display || account.user,
     menus: menus,
     exp: _toISO_(_expInMinutes_(180))
   };

@@ -157,7 +157,46 @@ function applyMenuVisibility(){
 
 /* ========= Helpers ========= */
 const money = n => Number(n||0).toLocaleString('vi-VN');
-function toNum(s){ return Number(String(s??'').replace(/[^\d\-]/g,'')) || 0; }
+function toNum(v){
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'number') return Number.isNaN(v) ? 0 : v;
+  let s = String(v).trim();
+  if (!s) return 0;
+  s = s.replace(/[\s\u00A0]+/g, '');
+  let negative = false;
+  if (s.startsWith('-')){ negative = true; s = s.slice(1); }
+  s = s.replace(/[^0-9,\.]/g, '');
+
+  const commaCount = (s.match(/,/g) || []).length;
+  const dotCount   = (s.match(/\./g) || []).length;
+
+  if (commaCount && dotCount){
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')){
+      s = s.replace(/\./g, '');
+      s = s.replace(/,/g, '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (commaCount){
+    if (commaCount === 1 && s.split(',')[1] && s.split(',')[1].length <= 2){
+      s = s.replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (dotCount){
+    if (dotCount === 1 && s.split('.')[1] && s.split('.')[1].length <= 2){
+      // giữ lại dấu . làm phần thập phân
+    } else {
+      s = s.replace(/\./g, '');
+    }
+  }
+
+  s = s.replace(/[^0-9\.]/g, '');
+  if (!s) return 0;
+  const out = Number(s);
+  if (Number.isNaN(out)) return 0;
+  return negative ? -out : out;
+}
 function fmt(v){
   if (!v) return '';
   const d=new Date(v);
