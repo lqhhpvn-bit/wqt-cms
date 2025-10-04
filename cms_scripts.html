@@ -19,6 +19,14 @@ const MENU = RAW_MENU.map(m => ({
   icon: m.icon || '' // để dành nếu sau này muốn hiện biểu tượng
 }));
 
+const KPI_DEFS = [
+  { key:'fund',      label:'Nguồn vốn' },
+  { key:'cashflow',  label:'Dòng tiền' },
+  { key:'customers', label:'Khách hàng' },
+  { key:'loans',     label:'Hợp đồng' }
+];
+const KPI_DEFAULT_ORDER = KPI_DEFS.map(k => k.key);
+
 const AUTH_STATE = { ok:false, principal:'', mode:'' };
 
 function setAuthState(ok, meta){
@@ -208,14 +216,55 @@ function renderTableRows(tbody, rows, fallbackCols){
 }
 
 /* ========= DASHBOARD ========= */
+function normalizeKpiLayoutClient(layout){
+  const orderIn = Array.isArray(layout?.order) ? layout.order.filter(key => KPI_DEFAULT_ORDER.includes(key)) : [];
+  KPI_DEFAULT_ORDER.forEach(key => { if (!orderIn.includes(key)) orderIn.push(key); });
+  const hiddenIn = Array.isArray(layout?.hidden) ? layout.hidden.filter(key => KPI_DEFAULT_ORDER.includes(key)) : [];
+  return { order: orderIn, hidden: hiddenIn };
+}
+
+function applyDashboardKpiLayout(cfg){
+  const wrap = document.getElementById('dashboard_kpis');
+  const info = document.getElementById('dashboard_kpis_hidden');
+  const layout = normalizeKpiLayoutClient(cfg?.dashboardKpiConfig || {});
+  const showAll = cfg?.showDashboardKpis !== false;
+  if (wrap){
+    const panels = Array.from(wrap.querySelectorAll('[data-kpi]'));
+    const map = new Map(panels.map(panel => [panel.dataset.kpi, panel]));
+    layout.order.forEach(key => {
+      const panel = map.get(key);
+      if (panel) wrap.appendChild(panel);
+    });
+    const hiddenSet = new Set(layout.hidden);
+    let visibleCount = 0;
+    panels.forEach(panel => {
+      const hide = !showAll || hiddenSet.has(panel.dataset.kpi);
+      panel.classList.toggle('hidden', hide);
+      if (!hide) visibleCount++;
+    });
+    const shouldShow = showAll && visibleCount > 0;
+    wrap.classList.toggle('hidden', !shouldShow);
+    if (info){
+      info.textContent = showAll
+        ? 'Không có KPI nào được bật. Vào tab Cấu hình để hiển thị.'
+        : 'KPI đang tắt. Vào tab Cấu hình để bật hiển thị.';
+      info.classList.toggle('hidden', shouldShow);
+    }
+    return shouldShow;
+  }
+  if (info){
+    info.textContent = showAll
+      ? 'Không có KPI nào được bật. Vào tab Cấu hình để hiển thị.'
+      : 'KPI đang tắt. Vào tab Cấu hình để bật hiển thị.';
+    info.classList.toggle('hidden', showAll);
+  }
+  return showAll;
+}
+
 function loadDashboard(){
   runApi('getAppConfig', {}, cfg=>{
-    const show = cfg?.showDashboardKpis !== false;
-    const wrap = document.getElementById('dashboard_kpis');
-    const info = document.getElementById('dashboard_kpis_hidden');
-    if (wrap) wrap.classList.toggle('hidden', !show);
-    if (info) info.classList.toggle('hidden', show);
-    if (show){
+    const shouldLoad = applyDashboardKpiLayout(cfg);
+    if (shouldLoad){
       runApi('getDashboardKpis_api', {}, data=>{
         if (!data) return;
         const setText = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
@@ -770,6 +819,68 @@ function loadPayHistory(){
 }
 
 /* ========= SETTINGS ========= */
+function bindKpiConfigActions(){
+  const wrap = document.getElementById('kpi_config_list');
+  if (!wrap || wrap.dataset.bound) return;
+  wrap.dataset.bound = '1';
+  wrap.addEventListener('click', ev => {
+    const btn = ev.target.closest('button[data-dir]');
+    if (!btn) return;
+    const item = btn.closest('.kpi-config-item');
+    if (!item || !item.parentElement) return;
+    if (btn.dataset.dir === 'up'){
+      const prev = item.previousElementSibling;
+      if (prev) item.parentElement.insertBefore(item, prev);
+    } else if (btn.dataset.dir === 'down'){
+      const next = item.nextElementSibling;
+      if (next) item.parentElement.insertBefore(next, item);
+    }
+  });
+}
+
+function renderKpiConfigList(cfg){
+  const wrap = document.getElementById('kpi_config_list');
+  if (!wrap) return;
+  const layout = normalizeKpiLayoutClient(cfg?.dashboardKpiConfig || {});
+  wrap.innerHTML = '';
+  layout.order.forEach(key => {
+    const def = KPI_DEFS.find(d => d.key === key) || { label: key };
+    const row = document.createElement('div');
+    row.className = 'kpi-config-item';
+    row.dataset.key = key;
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = layout.hidden.indexOf(key) === -1;
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(def.label));
+    const actions = document.createElement('div');
+    actions.className = 'kpi-config-actions';
+    const up = document.createElement('button'); up.type = 'button'; up.dataset.dir = 'up'; up.textContent = '↑';
+    const down = document.createElement('button'); down.type = 'button'; down.dataset.dir = 'down'; down.textContent = '↓';
+    actions.appendChild(up); actions.appendChild(down);
+    row.appendChild(label);
+    row.appendChild(actions);
+    wrap.appendChild(row);
+  });
+  bindKpiConfigActions();
+}
+
+function collectKpiConfig(){
+  const wrap = document.getElementById('kpi_config_list');
+  const items = Array.from(wrap?.querySelectorAll('.kpi-config-item') || []);
+  const order = [];
+  const hidden = [];
+  items.forEach(item => {
+    const key = item.dataset.key;
+    if (!key) return;
+    order.push(key);
+    const checked = item.querySelector('input[type="checkbox"]')?.checked !== false;
+    if (!checked) hidden.push(key);
+  });
+  return normalizeKpiLayoutClient({ order, hidden });
+}
+
 function loadSettings(){
   runApi('getAppConfig', {}, cfg=>{
     const el = document.getElementById('cfg_fund');
@@ -778,6 +889,7 @@ function loadSettings(){
     if (elPT) elPT.value = (cfg?.payTypes || ['gốc','lãi','phí']).join(',');
     const chk = document.getElementById('cfg_show_kpi');
     if (chk) chk.checked = cfg?.showDashboardKpis !== false;
+    renderKpiConfigList(cfg);
     refreshPayTypeOptions(cfg?.payTypes || ['gốc','lãi','phí']);
   });
 }
@@ -786,7 +898,8 @@ function saveSettings(){
   const payTypes = (document.getElementById('cfg_paytypes')?.value || 'gốc,lãi,phí')
                    .split(',').map(s=>s.trim()).filter(Boolean);
   const showDashboardKpis = document.getElementById('cfg_show_kpi')?.checked ?? true;
-  runApi('setAppConfig', { fund, payTypes, showDashboardKpis }, _=>{
+  const dashboardKpiConfig = collectKpiConfig();
+  runApi('setAppConfig', { fund, payTypes, showDashboardKpis, dashboardKpiConfig }, _=>{
     alert('Đã lưu cấu hình.');
     loadDashboard();
     refreshPayTypeOptions(payTypes);

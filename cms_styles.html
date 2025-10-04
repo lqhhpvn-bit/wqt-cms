@@ -29,6 +29,7 @@
   }
   img{ max-width:100%; }
   .hidden{ display:none !important; }
+  .hideable{ display:none; }
   .muted{ color:var(--muted); }
   .num{ text-align:right; }
   .m8{ margin-top:8px; }
@@ -383,6 +384,12 @@
     cursor:pointer;
     transition:.15s ease;
   }
+  .btn.ghost{
+    background:#fff;
+    border-color:var(--border);
+    color:#111827;
+  }
+  .btn.ghost:hover{ background:#f8fafc; }
   .btn:hover{ transform:translateY(-1px); }
   .btn.primary{ background:var(--pri); border-color:var(--pri); color:#fff; }
   .btn.primary:hover{ background:var(--pri-600); }
@@ -418,6 +425,73 @@
   input:focus, select:focus, textarea:focus{
     border-color:#c7cbe0; box-shadow:0 0 0 3px rgba(79,70,229,.12);
   }
+
+  /* ================== LOAN MANAGER ================== */
+  .loanmgr-layout{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(280px, 360px);
+    gap:16px;
+  }
+  .loanmgr-left,
+  .loanmgr-right{ display:flex; flex-direction:column; gap:16px; }
+  .slip-control{ display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+  .slip-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .slip-row label{ font-size:13px; font-weight:600; color:var(--muted); }
+  .slip-row .input{ min-width:140px; }
+  .slip-range-label{ min-width:140px; }
+  .slip-range-sep{ font-weight:600; }
+  .slip-summary{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:#f8fafc;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    box-shadow:0 8px 20px rgba(15,23,42,0.08);
+  }
+  .slip-summary-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .slip-summary-title{ font-weight:700; font-size:16px; }
+  .slip-summary-meta{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:12px;
+    font-size:13px;
+  }
+  .slip-summary-meta .meta-label{ color:var(--muted); font-weight:600; margin-right:4px; display:inline-block; min-width:72px; }
+  .slip-summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:12px;
+  }
+  .slip-summary-item{ padding:12px; border-radius:var(--radius-sm); background:#fff; border:1px solid rgba(79,70,229,.12); }
+  .slip-summary-item .title{ font-size:13px; font-weight:600; color:#1f2937; }
+  .slip-summary-item .value{ font-size:20px; font-weight:700; text-align:right; margin-top:6px; }
+  .slip-summary-footer{
+    background:#eef2ff;
+    border-radius:var(--radius-sm);
+    padding:12px 16px;
+    font-weight:600;
+    color:#312e81;
+  }
+
+  /* ================== KPI CONFIG ================== */
+  .kpi-config-wrap{ margin-top:16px; }
+  .kpi-config-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .kpi-config-item{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff; }
+  .kpi-config-item label{ display:flex; align-items:center; gap:8px; font-weight:600; color:#1f2937; }
+  .kpi-config-item input[type="checkbox"]{ width:auto; height:auto; }
+  .kpi-config-actions{ display:flex; gap:6px; }
+  .kpi-config-actions button{
+    width:32px; height:32px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:#f3f4f6;
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+  }
+  .kpi-config-actions button:hover{ background:#e5e7eb; }
 
   /* ================== MODAL ================== */
   dialog.modal,
@@ -481,6 +555,10 @@
   .tg-stack{ display:flex; flex-direction:column; gap:16px; }
 
   /* ================== RESPONSIVE ================== */
+  @media (max-width: 1024px){
+    .loanmgr-layout{ grid-template-columns:1fr; }
+    .slip-summary{ order:2; }
+  }
   @media (max-width: 1100px){
     .app{ grid-template-columns: 200px 1fr; }
     .kpi-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
