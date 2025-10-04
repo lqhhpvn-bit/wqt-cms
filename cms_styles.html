@@ -392,6 +392,9 @@
 
   .align-right{ display:flex; gap:8px; justify-content:flex-end; }
   .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .toolbar > *{ flex:0 1 auto; }
+  .toolbar .input{ width:auto; min-width:160px; flex:0 1 220px; }
+  .toolbar .btn{ height:36px; }
 
   /* ================== FORMS ================== */
   .field{ display:flex; flex-direction:column; gap:6px; }
@@ -399,8 +402,12 @@
   .row.wrap{ display:flex; flex-wrap:wrap; gap:12px; }
   .checkbox-inline{ display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; }
   .checkbox-inline input{ width:auto; height:auto; margin:0; }
-  .col-3{ grid-column:span 3; } .col-4{ grid-column:span 4; }
-  .col-6{ grid-column:span 6; } .col-8{ grid-column:span 8; } .col-12{ grid-column:span 12; }
+  .col-2{ grid-column:span 2; }
+  .col-3{ grid-column:span 3; }
+  .col-4{ grid-column:span 4; }
+  .col-6{ grid-column:span 6; }
+  .col-8{ grid-column:span 8; }
+  .col-12{ grid-column:span 12; }
   label{ font-size:12px; color:var(--muted); }
   input[type="text"], input[type="number"], input[type="date"], select, textarea{
     height:36px; padding:0 10px; width:100%;
@@ -441,6 +448,9 @@
     border:1px solid var(--border);
     padding:16px;
   }
+  .modal .body{ display:flex; flex-direction:column; gap:12px; }
+  .modal .body .row{ display:grid; grid-template-columns:repeat(12,1fr); gap:12px; }
+  .modal .body .field{ display:flex; flex-direction:column; gap:6px; }
   .modal .head{ display:flex; align-items:center; gap:12px; }
   .modal .title{ font-weight:700; font-size:16px; }
   .modal .foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
