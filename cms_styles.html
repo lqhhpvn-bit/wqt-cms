@@ -64,6 +64,14 @@
     padding:16px;
   }
 
+  .content{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    align-items:center;
+    padding-bottom:32px;
+  }
+
   .login-blocker{
     position:fixed;
     inset:0;
@@ -162,6 +170,11 @@
     border:1px solid var(--border);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
+    width:100%;
+    max-width:1280px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
   }
   h2{
     margin:0 0 12px 0;
@@ -447,15 +460,29 @@
   /* ================== LOAN MANAGER ================== */
   .loanmgr-layout{
     display:grid;
-    grid-template-columns:minmax(320px, 360px) minmax(0,1fr);
-    gap:20px;
+    grid-template-columns:minmax(360px, 420px) minmax(0,1fr);
+    gap:24px;
     align-items:flex-start;
   }
   .loanmgr-left,
   .loanmgr-right{ display:flex; flex-direction:column; gap:16px; }
+  .loanmgr-slip{
+    padding:0;
+    overflow:hidden;
+  }
+  .loanmgr-slip .card-head{
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .loanmgr-slip .card-body{
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
   .slip-filters{ display:grid; gap:12px; }
-  .slip-filters--primary{ grid-template-columns:minmax(0,1fr) minmax(160px,220px) minmax(150px,auto); }
-  .slip-filters--range{ grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(160px,auto); }
+  .slip-filters--primary{ grid-template-columns:minmax(0,1fr) minmax(200px,240px) minmax(170px,auto); }
+  .slip-filters--range{ grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(170px,auto); }
   @media (max-width: 900px){
     .loanmgr-layout{ grid-template-columns:1fr; }
     .slip-filters--primary,
@@ -474,14 +501,14 @@
     border:1px solid var(--border);
     border-radius:var(--radius);
     background:#f8fafc;
-    padding:16px;
+    padding:20px;
     display:flex;
     flex-direction:column;
-    gap:16px;
-    box-shadow:0 8px 20px rgba(15,23,42,0.08);
+    gap:20px;
+    box-shadow:0 12px 28px rgba(15,23,42,0.09);
   }
   .slip-summary-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-  .slip-summary-title{ font-weight:700; font-size:16px; }
+  .slip-summary-title{ font-weight:700; font-size:18px; }
   .slip-summary-meta{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
@@ -491,12 +518,12 @@
   .slip-summary-meta .meta-label{ color:var(--muted); font-weight:600; margin-right:4px; display:inline-block; min-width:72px; }
   .slip-summary-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
-    gap:12px;
+    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    gap:16px;
   }
-  .slip-summary-item{ padding:12px; border-radius:var(--radius-sm); background:#fff; border:1px solid rgba(79,70,229,.12); }
-  .slip-summary-item .title{ font-size:13px; font-weight:600; color:#1f2937; }
-  .slip-summary-item .value{ font-size:20px; font-weight:700; text-align:right; margin-top:6px; }
+  .slip-summary-item{ padding:16px; border-radius:var(--radius-sm); background:#fff; border:1px solid rgba(79,70,229,.12); box-shadow:0 6px 14px rgba(79,70,229,0.08); }
+  .slip-summary-item .title{ font-size:13px; font-weight:600; color:#1f2937; letter-spacing:.2px; }
+  .slip-summary-item .value{ font-size:22px; font-weight:700; text-align:right; margin-top:6px; color:#1f2937; }
   .slip-summary-footer{
     background:#eef2ff;
     border-radius:var(--radius-sm);
