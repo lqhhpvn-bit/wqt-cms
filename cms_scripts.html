@@ -59,15 +59,18 @@ function setAuthState(ok, meta){
 }
 
 function showLoginDialog(){
+  const blocker = document.getElementById('login_blocker');
+  if (blocker) blocker.classList.remove('hidden');
   const dlg = document.getElementById('dlg_login');
-  if (!dlg) return;
-  if (dlg.classList?.contains('modal-overlay')){
-    dlg.classList.add('show');
-  } else if (typeof dlg.showModal === 'function'){
-    if (!dlg.open) dlg.showModal();
-  } else {
-    dlg.setAttribute('open', 'true');
-    dlg.classList.add('show');
+  if (dlg){
+    if (dlg.classList?.contains('modal-overlay')){
+      dlg.classList.add('show');
+    } else if (typeof dlg.showModal === 'function'){
+      if (!dlg.open) dlg.showModal();
+    } else {
+      dlg.setAttribute('open', 'true');
+      dlg.classList.add('show');
+    }
   }
   const user = document.getElementById('login_user');
   if (user){
@@ -77,14 +80,15 @@ function showLoginDialog(){
 
 function closeLoginDialog(){
   const dlg = document.getElementById('dlg_login');
-  if (!dlg) return;
-  if (dlg.classList?.contains('modal-overlay')){
-    dlg.classList.remove('show');
-  } else if (typeof dlg.close === 'function'){
-    dlg.close();
-  } else {
-    dlg.removeAttribute('open');
-    dlg.classList.remove('show');
+  if (dlg){
+    if (dlg.classList?.contains('modal-overlay')){
+      dlg.classList.remove('show');
+    } else if (typeof dlg.close === 'function'){
+      dlg.close();
+    } else {
+      dlg.removeAttribute('open');
+      dlg.classList.remove('show');
+    }
   }
 }
 
@@ -621,13 +625,25 @@ function bindLoanMgr(){
       el.dataset.bound='1';
       el.addEventListener('change', loadUpcoming);
       el.addEventListener('blur', loadUpcoming);
+      el.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); showLoanSlip(); } });
     }
   });
+
+  const kSel = document.getElementById('slip_k_select');
+  if (kSel && !kSel.dataset.boundChange){
+    kSel.dataset.boundChange = '1';
+    kSel.addEventListener('change', ()=>{
+      const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
+      if (mahd) showLoanSlip();
+    });
+  }
 
   // payment form
   bind('pay_clear', ()=>fillPayForm({}));
   bind('pay_save', savePayment);
   bind('pay_delete', deletePayment);
+
+  loadUpcoming();
 }
 function showLoanSlip(){
   const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
@@ -638,7 +654,7 @@ function showLoanSlip(){
   runApi('getLoanSlip_api', { mahd, refISO: null, k: forcedK }, res=>{
     if (!res?.ok) return alert(res?.message || 'Không lấy được phiếu');
     const s = id => document.getElementById(id);
-    const card = document.getElementById('slip_card'); if (card) card.style.display='block';
+    const card = document.getElementById('slip_card'); if (card){ card.style.display='flex'; card.classList.remove('hideable'); }
     if (s('slip_title')) s('slip_title').textContent  = 'Phiếu thanh toán — Kỳ ' + (res.period?.k || '-');
 
     setText('slip_id', res.loan?.id || '');
@@ -670,7 +686,7 @@ function showLoanSlipRange(){
   runApi('getLoanSlipRange_api', { mahd, fromISO, toISO }, res=>{
     if (!res?.ok) return alert(res?.message || 'Không lấy được phiếu');
     const s = id => document.getElementById(id);
-    const card = document.getElementById('slip_card'); if (card) card.style.display='block';
+    const card = document.getElementById('slip_card'); if (card){ card.style.display='flex'; card.classList.remove('hideable'); }
     if (s('slip_title')) s('slip_title').textContent  = 'Phiếu thanh toán — Khoảng ngày';
 
     setText('slip_id', res.loan?.id || '');
@@ -690,16 +706,35 @@ function showLoanSlipRange(){
     setText('slip_total_paid',   money(res.paid?.total || 0));
     setText('slip_total_remain', money(res.remaining?.total || 0));
   }, e=> alert(e?.message || e));
+
+  loadUpcoming();
 }
 function loadUpcoming(){
   const mahd = (document.getElementById('slip_mahd')?.value || '').trim();
-  if (!mahd) return;
+  const tbody = document.getElementById('upcoming_rows');
+  if (tbody) tbody.innerHTML='';
+  const sel   = document.getElementById('slip_k_select');
+  if (sel) sel.innerHTML = '<option value="">(Tự động)</option>';
+
+  if (!mahd){
+    if (tbody){
+      const tr=document.createElement('tr');
+      const td=document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'Nhập Mã HĐ để xem lịch các kỳ sắp tới.';
+      td.className = 'empty-cell';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+    return;
+  }
 
   runApi('getUpcomingSchedule_api', { mahd, refISO: null, count:12 }, res=>{
     const tbody = document.getElementById('upcoming_rows'); if (tbody) tbody.innerHTML='';
     const sel   = document.getElementById('slip_k_select'); if (sel) sel.innerHTML = '<option value="">(Tự động)</option>';
 
-    (res?.rows||[]).forEach(row=>{
+    const rows = Array.isArray(res?.rows) ? res.rows : [];
+    rows.forEach(row=>{
       const tr=document.createElement('tr');
       [row.k, fmt(row.due), money(row.goc), money(row.lai), money(row.tong)]
         .forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
@@ -710,6 +745,16 @@ function loadUpcoming(){
     });
 
     if (sel && res?.currentK) sel.value = String(res.currentK);
+
+    if (!rows.length && tbody){
+      const tr=document.createElement('tr');
+      const td=document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'Chưa có dữ liệu kỳ sắp tới.';
+      td.className = 'empty-cell';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
   }, e=> alert(e?.message || e));
 }
 function loadRemindersToday(){
@@ -1023,6 +1068,7 @@ function handleLoginSuccess(res, fallbackUser){
 function doLogin(){
   const u = (document.getElementById('login_user')?.value || '').trim();
   const p = (document.getElementById('login_pass')?.value || '');
+  if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
   runApi('local_login_api', { user: u, password: p }, res=>{
     if (!handleLoginSuccess(res, u)) return alert('Đăng nhập thất bại.');
   }, e=> alert(e?.message||e));
@@ -1044,15 +1090,21 @@ function ensureLogin() {
 
 function bindLoginButton(){
   const btn = document.getElementById('btn_login_do');
-  if (!btn || btn.dataset.bound) return;
-  btn.dataset.bound = '1';
-  btn.addEventListener('click', ()=>{
-    const u = (document.getElementById('login_user')?.value || '').trim();
-    const p = (document.getElementById('login_pass')?.value || '');
-    if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
-    runApi('local_login_api', { user:u, password:p }, res=>{
-      if (!handleLoginSuccess(res, u)) alert('Đăng nhập thất bại.');
-    }, e=> alert(e?.message || e));
+  if (btn && !btn.dataset.bound){
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', doLogin);
+  }
+  ['login_user','login_pass'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input && !input.dataset.loginBound){
+      input.dataset.loginBound = '1';
+      input.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter'){
+          ev.preventDefault();
+          doLogin();
+        }
+      });
+    }
   });
 }
 
