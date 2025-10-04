@@ -67,7 +67,7 @@
 
       <main class="content">
         <!-- ========== DASHBOARD ========== -->
-        <section id="view-dashboard" class="view">
+        <section id="view-dashboard" class="view view-active">
           <h2>Tổng quan</h2>
 
           <div id="dashboard_kpis" class="kpi-grid4">
@@ -269,15 +269,35 @@
             <button id="btn_new_loan" class="btn primary">Thêm HĐ</button>
           </div>
 
-          <div id="loan_total" class="muted m8">—</div>
-          <table class="tbl">
-            <thead><tr>
-              <th>Mã HĐ</th><th>ID KH</th><th>Tên KH</th><th>PL KH</th><th>Hình thức</th>
-              <th>Giải ngân</th><th>Kỳ hạn</th><th>Lãi %/th</th><th>Số tiền</th><th>Chu kỳ</th>
-              <th>Tất toán</th><th>Trạng thái</th><th>Tạo</th><th>Cập nhật</th><th>Người sửa</th><th>Thao tác</th>
-            </tr></thead>
-            <tbody id="loan_rows"></tbody>
-          </table>
+          <div class="card table-card">
+            <div class="table-card-head">
+              <div class="card-head">Danh sách Hợp đồng</div>
+              <div id="loan_total" class="table-meta muted">—</div>
+            </div>
+            <div class="table-scroll">
+              <table class="tbl tbl-loans">
+                <thead><tr>
+                  <th class="col-code">Mã HĐ</th>
+                  <th class="col-cus-id">ID KH</th>
+                  <th class="col-name">Tên KH</th>
+                  <th class="col-seg">PL KH</th>
+                  <th class="col-type">Hình thức</th>
+                  <th class="col-date">Giải ngân</th>
+                  <th class="col-small">Kỳ hạn</th>
+                  <th class="col-small">Lãi %/th</th>
+                  <th class="col-amount">Số tiền</th>
+                  <th class="col-small">Chu kỳ</th>
+                  <th class="col-date">Tất toán</th>
+                  <th class="col-status">Trạng thái</th>
+                  <th class="col-date">Tạo</th>
+                  <th class="col-date optional">Cập nhật</th>
+                  <th class="col-editor optional">Người sửa</th>
+                  <th class="col-actions">Thao tác</th>
+                </tr></thead>
+                <tbody id="loan_rows"></tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
         <!-- ========== LOAN MANAGER / PAYMENTS ========== -->

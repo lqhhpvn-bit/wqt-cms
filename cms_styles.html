@@ -21,6 +21,7 @@
   html,body{ height:100%; }
   body{
     margin:0;
+    padding-top:56px;
     background:var(--bg);
     color:var(--text);
     font:14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Arial;
@@ -40,11 +41,12 @@
 
   /* ================== LAYOUT (TOPBAR + SIDEBAR + MAIN) ================== */
   .topbar{
-    position:sticky; top:0; z-index:50;
+    position:fixed; top:0; left:0; right:0; z-index:120;
     display:flex; align-items:center; gap:12px;
     height:56px; padding:0 16px;
     background:var(--surface);
     border-bottom:1px solid var(--border);
+    box-shadow:0 8px 24px rgba(15,23,42,0.06);
   }
   .brand{ font-weight:700; letter-spacing:.2px; }
   .auth-status{
@@ -80,7 +82,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    z-index:120;
+    z-index:200;
     padding:24px;
   }
   body.needs-login .app > :not(#login_blocker){ pointer-events:none; }
@@ -166,6 +168,7 @@
     min-width:0;
   }
   .view{
+    display:none;
     padding:16px;
     background:var(--surface);
     border:1px solid var(--border);
@@ -173,9 +176,11 @@
     box-shadow:var(--shadow);
     width:100%;
     max-width:1280px;
-    display:flex;
     flex-direction:column;
     gap:16px;
+  }
+  .view.view-active{
+    display:flex;
   }
   h2{
     margin:0 0 12px 0;
@@ -404,6 +409,30 @@
   .tbl .status-ok{ color:var(--ok); font-weight:600; }
   .tbl .status-warn{ color:var(--warn); font-weight:600; }
   .tbl .status-danger{ color:var(--danger); font-weight:700; }
+  .table-card{ padding:0; display:flex; flex-direction:column; overflow:hidden; }
+  .table-card-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .table-card-head .table-meta{ margin-left:auto; }
+  .table-meta{ font-size:13px; }
+  .table-scroll{ width:100%; overflow-x:auto; }
+  .tbl-loans{ table-layout:fixed; min-width:1100px; }
+  .tbl-loans th, .tbl-loans td{ vertical-align:middle; }
+  .tbl-loans .col-code{ width:120px; }
+  .tbl-loans .col-cus-id{ width:120px; }
+  .tbl-loans .col-name{ min-width:200px; max-width:260px; }
+  .tbl-loans .col-seg{ max-width:140px; }
+  .tbl-loans .col-type{ max-width:160px; }
+  .tbl-loans .col-date{ width:140px; }
+  .tbl-loans .col-small{ width:96px; }
+  .tbl-loans .col-amount{ width:140px; }
+  .tbl-loans .col-status{ max-width:140px; }
+  .tbl-loans .col-editor{ max-width:220px; white-space:normal; overflow-wrap:anywhere; }
+  .tbl-loans .col-actions{ width:180px; }
+  .action-group{ display:inline-flex; gap:6px; flex-wrap:nowrap; }
+  .action-group .btn{ flex:1 0 auto; white-space:nowrap; }
+  @media (max-width: 1280px){
+    .tbl-loans th.optional,
+    .tbl-loans td.optional{ display:none; }
+  }
 
   /* ================== BUTTONS ================== */
   .btn{
