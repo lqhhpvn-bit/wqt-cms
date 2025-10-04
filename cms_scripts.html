@@ -166,6 +166,10 @@ function addMonths(iso, n){
 }
 function hmap(headers){ const m={}; (headers||[]).forEach((h,i)=> m[String(h).trim()]=i); return m; }
 const pick=(row, idx)=> (idx>=0 && idx!=null) ? row[idx] : '';
+const setText = (id, value) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+};
 function isInThisWeek(dateStr){
   if(!dateStr) return false;
   const d = new Date(dateStr); if(isNaN(d)) return false;
@@ -588,22 +592,22 @@ function showLoanSlip(){
     const card = document.getElementById('slip_card'); if (card) card.style.display='block';
     if (s('slip_title')) s('slip_title').textContent  = 'Phiếu thanh toán — Kỳ ' + (res.period?.k || '-');
 
-    s('slip_id')?.textContent   = res.loan?.id || '';
-    s('slip_name')?.textContent = res.loan?.name || '';
-    s('slip_type')?.textContent = res.loan?.type || '';
+    setText('slip_id', res.loan?.id || '');
+    setText('slip_name', res.loan?.name || '');
+    setText('slip_type', res.loan?.type || '');
 
-    s('slip_k')?.textContent        = res.period?.k || '';
-    s('slip_from_txt')?.textContent = fmt(res.period?.from);
-    s('slip_to_txt')?.textContent   = fmt(res.period?.to);
+    setText('slip_k', res.period?.k || '');
+    setText('slip_from_txt', fmt(res.period?.from));
+    setText('slip_to_txt', fmt(res.period?.to));
 
-    s('slip_goc_due')?.textContent = money(res.period?.principalDue || 0);
-    s('slip_lai_due')?.textContent = money(res.period?.interestDue  || 0);
-    s('slip_goc_paid')?.textContent= money(res.paid?.principal || 0);
-    s('slip_lai_paid')?.textContent= money(res.paid?.interest  || 0);
+    setText('slip_goc_due', money(res.period?.principalDue || 0));
+    setText('slip_lai_due', money(res.period?.interestDue  || 0));
+    setText('slip_goc_paid', money(res.paid?.principal || 0));
+    setText('slip_lai_paid', money(res.paid?.interest  || 0));
 
-    s('slip_total_due')?.textContent    = money(res.period?.totalDue || 0);
-    s('slip_total_paid')?.textContent   = money(res.paid?.total || 0);
-    s('slip_total_remain')?.textContent = money(res.remaining?.total || 0);
+    setText('slip_total_due',    money(res.period?.totalDue || 0));
+    setText('slip_total_paid',   money(res.paid?.total || 0));
+    setText('slip_total_remain', money(res.remaining?.total || 0));
   }, e=> alert(e?.message || e));
 
   loadUpcoming();
@@ -620,22 +624,22 @@ function showLoanSlipRange(){
     const card = document.getElementById('slip_card'); if (card) card.style.display='block';
     if (s('slip_title')) s('slip_title').textContent  = 'Phiếu thanh toán — Khoảng ngày';
 
-    s('slip_id')?.textContent   = res.loan?.id || '';
-    s('slip_name')?.textContent = res.loan?.name || '';
-    s('slip_type')?.textContent = res.loan?.type || '';
+    setText('slip_id', res.loan?.id || '');
+    setText('slip_name', res.loan?.name || '');
+    setText('slip_type', res.loan?.type || '');
 
-    s('slip_k')?.textContent        = ''; // không theo kỳ cố định
-    s('slip_from_txt')?.textContent = fmt(res.range?.from);
-    s('slip_to_txt')?.textContent   = fmt(res.range?.to);
+    setText('slip_k', ''); // không theo kỳ cố định
+    setText('slip_from_txt', fmt(res.range?.from));
+    setText('slip_to_txt', fmt(res.range?.to));
 
-    s('slip_goc_due')?.textContent = money(res.due?.principal || 0);
-    s('slip_lai_due')?.textContent = money(res.due?.interest  || 0);
-    s('slip_goc_paid')?.textContent= money(res.paid?.principal || 0);
-    s('slip_lai_paid')?.textContent= money(res.paid?.interest  || 0);
+    setText('slip_goc_due', money(res.due?.principal || 0));
+    setText('slip_lai_due', money(res.due?.interest  || 0));
+    setText('slip_goc_paid', money(res.paid?.principal || 0));
+    setText('slip_lai_paid', money(res.paid?.interest  || 0));
 
-    s('slip_total_due')?.textContent    = money(res.due?.total || 0);
-    s('slip_total_paid')?.textContent   = money(res.paid?.total || 0);
-    s('slip_total_remain')?.textContent = money(res.remaining?.total || 0);
+    setText('slip_total_due',    money(res.due?.total || 0));
+    setText('slip_total_paid',   money(res.paid?.total || 0));
+    setText('slip_total_remain', money(res.remaining?.total || 0));
   }, e=> alert(e?.message || e));
 }
 function loadUpcoming(){
@@ -872,7 +876,7 @@ function runApi(fn, payload, onOk, onFail){
   const req = withSession(payload);
   const ok = (typeof onOk === 'function') ? onOk : (()=>{});
   const fail = (typeof onFail === 'function') ? onFail : (err=> alert(err?.message || err));
-  google.script.run
+  const runner = google.script.run
     .withSuccessHandler(ok)
     .withFailureHandler(err=>{
       const msg = err?.message || err;
@@ -884,8 +888,8 @@ function runApi(fn, payload, onOk, onFail){
         return;
       }
       fail(err);
-    })
-    [fn](req);
+    });
+  runner[fn](req);
 }
 
 // Đăng nhập
