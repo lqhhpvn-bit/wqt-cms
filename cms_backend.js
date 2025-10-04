@@ -215,43 +215,84 @@ function _randToken_(){ return Utilities.getUuid().replace(/-/g,''); }
 function _expInMinutes_(n){ var d=new Date(); d.setMinutes(d.getMinutes()+n); return d; }
 
 /** Admin tạo/sửa tài khoản nội bộ */
-function admin_upsertLocalUser(user, display, passwordPlain, menusCsv, active){
-  _cms_guard_();
-  user=String(user||'').trim(); if(!user) throw new Error('Thiếu user');
+function admin_upsertLocalUser(payload, display, passwordPlain, menusCsv, active){
+  if (typeof payload === 'string'){
+    return admin_upsertLocalUser({ user: payload, display: display, password: passwordPlain, menus: menusCsv, active: active });
+  }
+  payload = payload || {};
+  mustHaveHybrid(payload, 'account');
 
-  var s=_accSheet_(); var H=_accMap_(s.headers);
-  var iUser=H['User'], iDisp=H['Display'], iHash=H['PasswordHash'], iSalt=H['Salt'], iMenus=H['Menus'], iAct=H['Active'];
+  var user = String(payload.user || payload.username || payload.account || '').trim();
+  if (!user) throw new Error('Thiếu user');
 
-  var found=-1;
-  for (var i=0;i<s.rows.length;i++){
-    if (String(s.rows[i][iUser]).trim().toLowerCase()===user.toLowerCase()){ found=i; break; }
+  var s = _accSheet_();
+  var H = _accMap_(s.headers);
+  var iUser = H['User'], iDisp = H['Display'], iHash = H['PasswordHash'], iSalt = H['Salt'], iMenus = H['Menus'], iAct = H['Active'];
+
+  var found = -1;
+  for (var i = 0; i < s.rows.length; i++){
+    if (String(s.rows[i][iUser]).trim().toLowerCase() === user.toLowerCase()){ found = i; break; }
   }
 
-  var salt = (passwordPlain) ? Utilities.getUuid() : (found>=0 ? s.rows[found][iSalt] : Utilities.getUuid());
-  var hash = (passwordPlain) ? _hash256b64_(passwordPlain+salt) : (found>=0 ? s.rows[found][iHash] : '');
-  var disp = (display!=null)?display:(found>=0?s.rows[found][iDisp]:user);
-  var menus= (menusCsv!=null)?menusCsv:(found>=0?s.rows[found][iMenus]:MENU_CONFIG.map(m=>m.key).join(','));
-  var act  = (active!=null)?active:(found>=0?s.rows[found][iAct]:'TRUE');
+  var displayVal = (payload.display !== undefined && payload.display !== null) ? payload.display : display;
+  var passwordVal = (payload.password !== undefined && payload.password !== null) ? payload.password : passwordPlain;
+  if (passwordVal === undefined || passwordVal === null) passwordVal = payload.pass || payload.newPassword || '';
+  if (typeof passwordVal !== 'string') passwordVal = String(passwordVal || '');
 
-  if(found>=0){
-    s.rows[found][iDisp]=disp; s.rows[found][iHash]=hash; s.rows[found][iSalt]=salt;
-    s.rows[found][iMenus]=menus; s.rows[found][iAct]=String(act);
-    s.sheet.getRange(found+2,1,1,s.headers.length).setValues([s.rows[found]]);
-    return {ok:true, action:'update', user:user};
+  var menusInput = (payload.menus !== undefined) ? payload.menus : menusCsv;
+  var menus;
+  if (Array.isArray(menusInput)){
+    menus = menusInput.map(function(x){ return String(x || '').trim(); }).filter(Boolean).join(',');
+  } else if (menusInput !== undefined && menusInput !== null) {
+    menus = String(menusInput);
   } else {
-    var row=[]; row[iUser]=user; row[iDisp]=disp; row[iHash]=hash; row[iSalt]=salt; row[iMenus]=menus; row[iAct]=String(act);
-    for (var c=0;c<s.headers.length;c++){ if (typeof row[c]==='undefined') row[c]=''; }
+    menus = null;
+  }
+
+  var activeInput = (payload.active !== undefined) ? payload.active : active;
+  var hasActive = !(activeInput === undefined || activeInput === null || activeInput === '');
+  var activeBool = hasActive ? (typeof activeInput === 'string'
+    ? !/^(false|0|no|off)$/i.test(String(activeInput))
+    : !!activeInput) : null;
+
+  var hasPassword = passwordVal && passwordVal.length;
+  var salt = hasPassword ? Utilities.getUuid() : (found >= 0 ? s.rows[found][iSalt] : Utilities.getUuid());
+  var hash = hasPassword ? _hash256b64_(String(passwordVal) + salt) : (found >= 0 ? s.rows[found][iHash] : '');
+  var disp = (displayVal != null) ? displayVal : (found >= 0 ? s.rows[found][iDisp] : user);
+  var menusCsvFinal = (menus != null) ? menus : (found >= 0 ? s.rows[found][iMenus]
+    : ((typeof MENU_CONFIG !== 'undefined' && MENU_CONFIG.length)
+        ? MENU_CONFIG.map(function(m){ return m.key; }).join(',')
+        : 'dashboard'));
+  var act = hasActive ? (activeBool ? 'TRUE' : 'FALSE') : (found >= 0 ? s.rows[found][iAct] : 'TRUE');
+
+  if (found >= 0){
+    s.rows[found][iDisp] = disp;
+    s.rows[found][iHash] = hash;
+    s.rows[found][iSalt] = salt;
+    s.rows[found][iMenus] = menusCsvFinal;
+    s.rows[found][iAct] = String(act);
+    s.sheet.getRange(found + 2, 1, 1, s.headers.length).setValues([s.rows[found]]);
+    return { ok: true, action: 'update', user: user };
+  } else {
+    var row = [];
+    row[iUser] = user;
+    row[iDisp] = disp;
+    row[iHash] = hash;
+    row[iSalt] = salt;
+    row[iMenus] = menusCsvFinal;
+    row[iAct] = String(act);
+    for (var c = 0; c < s.headers.length; c++){ if (typeof row[c] === 'undefined') row[c] = ''; }
     s.sheet.appendRow(row);
-    return {ok:true, action:'create', user:user};
+    return { ok: true, action: 'create', user: user };
   }
 }
 function admin_setLocalUserPassword(user, newPassword){
-  _cms_guard_();
   return admin_upsertLocalUser(user, null, newPassword, null, null);
 }
 
-function admin_listLocalUsers(){
-  _cms_guard_();
+function admin_listLocalUsers(payload){
+  payload = payload || {};
+  mustHaveHybrid(payload, 'account');
   var s=_accSheet_(); var H=_accMap_(s.headers);
   var iUser=H['User'], iDisp=H['Display'], iMenus=H['Menus'], iAct=H['Active'];
   var rows=(s.rows||[]).map(function(r){
@@ -264,9 +305,11 @@ function admin_listLocalUsers(){
   });
   return { ok:true, rows:rows, allMenus: (typeof MENU_CONFIG!=='undefined' ? MENU_CONFIG.map(function(m){return m.key;}) : []) };
 }
-function admin_deleteLocalUser(user){
-  _cms_guard_();
-  user=String(user||'').trim(); if(!user) throw new Error('Thiếu user');
+function admin_deleteLocalUser(payload){
+  payload = payload || {};
+  mustHaveHybrid(payload, 'account');
+  var user = String(payload.user || payload.username || payload.account || '').trim();
+  if(!user) throw new Error('Thiếu user');
   var s=_accSheet_(); var H=_accMap_(s.headers); var iUser=H['User'];
   for (var i=0;i<s.rows.length;i++){
     if (String(s.rows[i][iUser]||'').trim().toLowerCase()===user.toLowerCase()){
