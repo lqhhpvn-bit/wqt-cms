@@ -27,12 +27,18 @@ const KPI_DEFS = [
 ];
 const KPI_DEFAULT_ORDER = KPI_DEFS.map(k => k.key);
 
-const AUTH_STATE = { ok:false, principal:'', mode:'' };
+const SESSION_STORAGE_KEY = 'WQT_TOKEN';
+const SESSION_EVENT_NAME = 'wqt:session-change';
+const AUTH_EVENT_NAME = 'wqt:auth-change';
+
+const AUTH_STATE = { ok:false, principal:'', mode:'', display:'' };
 
 function setAuthState(ok, meta){
+  const prev = { ok: AUTH_STATE.ok, principal: AUTH_STATE.principal, mode: AUTH_STATE.mode };
   AUTH_STATE.ok = !!ok;
   AUTH_STATE.mode = ok ? (meta?.mode || (meta?.menus ? 'local' : '')) : '';
   AUTH_STATE.principal = ok ? (meta?.display || meta?.principal || '') : '';
+  AUTH_STATE.display = AUTH_STATE.principal;
 
   const blocker = document.getElementById('login_blocker');
   if (blocker) blocker.classList.toggle('hidden', AUTH_STATE.ok);
@@ -55,6 +61,17 @@ function setAuthState(ok, meta){
 
   if (!AUTH_STATE.ok) {
     showLoginDialog();
+  }
+
+  const changed = prev.ok !== AUTH_STATE.ok || prev.principal !== AUTH_STATE.principal || prev.mode !== AUTH_STATE.mode;
+  if (changed){
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, {
+      detail: {
+        ok: AUTH_STATE.ok,
+        mode: AUTH_STATE.mode,
+        principal: AUTH_STATE.principal
+      }
+    }));
   }
 }
 
@@ -125,10 +142,16 @@ function setActiveTab(key){
 }
 function onRoute(){
   const key = currentKey();
-  const keys = MENU.map(m => m.key); // LẤY TỰ ĐỘNG
-  keys.forEach(k => {
-    const el = document.getElementById('view-' + k);
-    if (el) el.classList.toggle('hidden', k !== key);
+  const keys = MENU.map(m => m.key);
+  if (keys.length && !keys.includes(key)){
+    navigate(keys[0]);
+    return;
+  }
+  document.querySelectorAll('.view').forEach(el => {
+    const viewKey = (el.id || '').replace('view-', '');
+    const isActive = viewKey === key;
+    el.classList.toggle('hidden', !isActive);
+    el.classList.toggle('view-active', isActive);
   });
   setActiveTab(key);
   if (!AUTH_STATE.ok) return;
@@ -514,22 +537,47 @@ function loadLoans(page=1){
       rows.forEach(r=>{
         const id = pick(r,idIdx);
         const tr=document.createElement('tr');
-        [
-          id, pick(r,cusIdIdx), pick(r,cusNameIdx), pick(r,plIdx), pick(r,typeIdx),
-          fmt(pick(r,startIdx)), pick(r,monthsIdx), pick(r,rateIdx),
-          pick(r,amountIdx), pick(r,cycleIdx), fmt(pick(r,closeIdx)),
-          pick(r,statusIdx), fmt(pick(r,cIdx)), fmt(pick(r,uIdx)), pick(r,eIdx)
-        ].forEach(v=>{ const td=document.createElement('td'); td.textContent=(v??''); tr.appendChild(td); });
+        const amountRaw = pick(r,amountIdx);
+        const amountTxt = (amountRaw === undefined || amountRaw === null || amountRaw === '')
+          ? ''
+          : money(toNum(amountRaw));
+        const cells = [
+          { value:id, cls:'col-code' },
+          { value:pick(r,cusIdIdx), cls:'col-cus-id' },
+          { value:pick(r,cusNameIdx), cls:'col-name' },
+          { value:pick(r,plIdx), cls:'col-seg' },
+          { value:pick(r,typeIdx), cls:'col-type' },
+          { value:fmt(pick(r,startIdx)), cls:'col-date' },
+          { value:pick(r,monthsIdx), cls:'col-small' },
+          { value:pick(r,rateIdx), cls:'col-small' },
+          { value:amountTxt, cls:'col-amount num' },
+          { value:pick(r,cycleIdx), cls:'col-small' },
+          { value:fmt(pick(r,closeIdx)), cls:'col-date' },
+          { value:pick(r,statusIdx), cls:'col-status' },
+          { value:fmt(pick(r,cIdx)), cls:'col-date' },
+          { value:fmt(pick(r,uIdx)), cls:'col-date optional' },
+          { value:pick(r,eIdx), cls:'col-editor optional' }
+        ];
+        cells.forEach(cell=>{
+          const td=document.createElement('td');
+          if (cell.cls) td.className = cell.cls;
+          td.textContent = (cell.value ?? '');
+          tr.appendChild(td);
+        });
 
         // Thao tác
         const tdAct=document.createElement('td');
+        tdAct.className='col-actions';
+        const group=document.createElement('div');
+        group.className='action-group';
         const bView=document.createElement('button'); bView.className='btn'; bView.textContent='Xem';
         bView.onclick=()=>{ document.getElementById('slip_mahd').value=id; navigate('loanmgr'); showLoanSlip(); };
-        const bEdit=document.createElement('button'); bEdit.className='btn'; bEdit.textContent='Sửa'; bEdit.style.marginLeft='6px';
+        const bEdit=document.createElement('button'); bEdit.className='btn'; bEdit.textContent='Sửa';
         bEdit.onclick=()=> openEditLoanDialog(r, H);
-        const bDel=document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Xoá'; bDel.style.marginLeft='6px';
+        const bDel=document.createElement('button'); bDel.className='btn danger'; bDel.textContent='Xoá';
         bDel.onclick=()=> deleteLoanById(id);
-        tdAct.appendChild(bView); tdAct.appendChild(bEdit); tdAct.appendChild(bDel);
+        group.appendChild(bView); group.appendChild(bEdit); group.appendChild(bDel);
+        tdAct.appendChild(group);
         tr.appendChild(tdAct);
 
         tb.appendChild(tr);
@@ -1059,9 +1107,16 @@ window.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // ===== Session token (tài khoản nội bộ) =====
-const SESS_KEY = 'WQT_SESSION';
-const getToken = () => localStorage.getItem(SESS_KEY) || '';
-const setToken = (t) => t ? localStorage.setItem(SESS_KEY, t) : localStorage.removeItem(SESS_KEY);
+const getToken = () => localStorage.getItem(SESSION_STORAGE_KEY) || '';
+const setToken = (t) => {
+  const token = t ? String(t) : '';
+  if (token){
+    localStorage.setItem(SESSION_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+  }
+  window.dispatchEvent(new CustomEvent(SESSION_EVENT_NAME, { detail: { token } }));
+};
 const withSession = (payload={}) => {
   const out = Object.assign({}, payload || {});
   const t = getToken();

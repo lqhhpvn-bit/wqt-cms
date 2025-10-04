@@ -1,0 +1,3 @@
+Auth: Thống nhất 1 localStorage key + 1 schema trả về từ /login + có user admin/allowed email.
+Layout: Bù khoảng cho header và chỉ bật 1 view active; bỏ min-height/margin dư.
+Table: Bọc bảng trong wrapper có cuộn, cố định layout bảng, rút gọn/cho ngắt chữ ở cột dài, ẩn bớt cột phụ trên màn nhỏ.
