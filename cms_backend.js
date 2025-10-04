@@ -408,7 +408,7 @@ function admin_upsertLocalUser(payload, display, passwordPlain, menusCsv, active
     return admin_upsertLocalUser({ user: payload, display: display, password: passwordPlain, menus: menusCsv, active: active });
   }
   payload = payload || {};
-  mustHaveHybrid(payload, 'account');
+  mustHaveHybrid(payload, _accountMenuGuardKey_());
 
   var user = String(payload.user || payload.username || payload.account || '').trim();
   if (!user) throw new Error('Thiếu user');
@@ -480,7 +480,7 @@ function admin_setLocalUserPassword(user, newPassword){
 
 function admin_listLocalUsers(payload){
   payload = payload || {};
-  mustHaveHybrid(payload, 'account');
+  mustHaveHybrid(payload, _accountMenuGuardKey_());
   var s=_accSheet_(); var H=_accMap_(s.headers);
   var iUser=H['User'], iDisp=H['Display'], iMenus=H['Menus'], iAct=H['Active'];
   var rows=(s.rows||[]).map(function(r){
@@ -495,7 +495,7 @@ function admin_listLocalUsers(payload){
 }
 function admin_deleteLocalUser(payload){
   payload = payload || {};
-  mustHaveHybrid(payload, 'account');
+  mustHaveHybrid(payload, _accountMenuGuardKey_());
   var user = String(payload.user || payload.username || payload.account || '').trim();
   if(!user) throw new Error('Thiếu user');
   var s=_accSheet_(); var H=_accMap_(s.headers); var iUser=H['User'];
@@ -524,8 +524,10 @@ function local_login(user, password){
   if (got!==expect) throw new Error('Sai tài khoản hoặc mật khẩu.');
 
   var token=_randToken_();
+  var menus = (row[iMenus]||'').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+  menus = _expandAccountMenuAliases_(menus);
   var payload={ user: row[iUser], display: row[iDisp]||row[iUser],
-                menus: (row[iMenus]||'').split(',').map(x=>x.trim()).filter(Boolean),
+                menus: menus,
                 exp: _toISO_(_expInMinutes_(180)) };
   _sessCache_().put('SESS::'+token, JSON.stringify(payload), 60*180);
   return { ok:true, token: token, display: payload.display, menus: payload.menus };
@@ -563,6 +565,65 @@ function _configSessionFromToken_(token){
   }
 }
 
+var ACCOUNT_MENU_PRIMARY = 'accounts';
+var ACCOUNT_MENU_ALIASES = [ACCOUNT_MENU_PRIMARY, 'account'];
+
+function _isAccountMenuKey_(key){
+  key = String(key || '').trim().toLowerCase();
+  if (!key) return false;
+  for (var i = 0; i < ACCOUNT_MENU_ALIASES.length; i++){
+    if (ACCOUNT_MENU_ALIASES[i] === key) return true;
+  }
+  return false;
+}
+
+function _expandAccountMenuAliases_(menus){
+  var list = Array.isArray(menus) ? menus : [];
+  var seen = {};
+  var out = [];
+  var hasAccountAlias = false;
+  for (var i = 0; i < list.length; i++){
+    var key = String(list[i] || '').trim().toLowerCase();
+    if (!key) continue;
+    if (!seen[key]){
+      seen[key] = true;
+      out.push(key);
+    }
+    if (_isAccountMenuKey_(key)) hasAccountAlias = true;
+  }
+  if (hasAccountAlias){
+    for (var j = 0; j < ACCOUNT_MENU_ALIASES.length; j++){
+      var alias = ACCOUNT_MENU_ALIASES[j];
+      if (!seen[alias]){
+        seen[alias] = true;
+        out.push(alias);
+      }
+    }
+  }
+  return out;
+}
+
+function _menuHasKey_(menus, key){
+  if (!key) return true;
+  var target = String(key || '').trim().toLowerCase();
+  if (!target) return true;
+  var set = {};
+  var list = Array.isArray(menus) ? menus : [];
+  for (var i = 0; i < list.length; i++){
+    var m = String(list[i] || '').trim().toLowerCase();
+    if (m) set[m] = true;
+  }
+  if (_isAccountMenuKey_(target)){
+    for (var j = 0; j < ACCOUNT_MENU_ALIASES.length; j++){
+      if (set[ACCOUNT_MENU_ALIASES[j]]) return true;
+    }
+    return false;
+  }
+  return !!set[target];
+}
+
+function _accountMenuGuardKey_(){ return ACCOUNT_MENU_PRIMARY; }
+
 function config_local_login_api(payload){
   payload = payload || {};
   var user = String(payload.user || payload.username || payload.account || '').trim();
@@ -580,12 +641,13 @@ function config_local_login_api(payload){
 
   var menus = (account.menus || []).slice();
   if (account.source === 'main'){
-    menus = menus.filter(function(m){ return m === 'schema' || m === 'account'; });
+    menus = menus.filter(function(m){
+      var key = String(m || '').trim().toLowerCase();
+      return key === 'schema' || _isAccountMenuKey_(key);
+    });
   }
+  menus = _expandAccountMenuAliases_(menus);
   if (!menus.length) menus = ['schema'];
-  var uniqueMenus = [];
-  menus.forEach(function(m){ if (uniqueMenus.indexOf(m) === -1) uniqueMenus.push(m); });
-  menus = uniqueMenus;
 
   var token = _randToken_();
   var payloadOut = {
@@ -628,9 +690,16 @@ function mustHaveHybrid(payload, menuKey){
   var ctx=_hybridGuard_(payload||{});
   if (menuKey){
     if (ctx.mode==='local' || ctx.mode==='config'){
-      if (!ctx.menus || ctx.menus.indexOf(menuKey)===-1) throw new Error('Không có quyền vào mục: '+menuKey);
+      if (!ctx.menus || !_menuHasKey_(ctx.menus, menuKey)) throw new Error('Không có quyền vào mục: '+menuKey);
     } else {
-      try{ mustHave(menuKey); }catch(e){ /* nếu chưa set role theo email, cho qua */ }
+      try{
+        if (_isAccountMenuKey_(menuKey)){
+          try { mustHave('account'); }
+          catch(err){ mustHave('accounts'); }
+        } else {
+          mustHave(menuKey);
+        }
+      }catch(e){ /* nếu chưa set role theo email, cho qua */ }
     }
   }
   return ctx;
@@ -1477,7 +1546,7 @@ function _changeLocalPassword_(user, oldPw, newPw){
 }
 
 function getMyPrefs_api(payload){
-  var ctx = mustHaveHybrid(payload, 'account');
+  var ctx = mustHaveHybrid(payload, _accountMenuGuardKey_());
   if (ctx.mode === 'local'){
     return _getLocalPrefs_(ctx.principal);
   }
@@ -1486,7 +1555,7 @@ function getMyPrefs_api(payload){
 
 function setMyPrefs_api(payload){
   payload = payload || {};
-  var ctx = mustHaveHybrid(payload, 'account');
+  var ctx = mustHaveHybrid(payload, _accountMenuGuardKey_());
   var prefs = { timeFormat: payload.timeFormat, font: payload.font };
   if (ctx.mode === 'local'){
     return _setLocalPrefs_(ctx.principal, prefs);
@@ -1496,7 +1565,7 @@ function setMyPrefs_api(payload){
 
 function changeMyPassword_api(payload){
   payload = payload || {};
-  var ctx = mustHaveHybrid(payload, 'account');
+  var ctx = mustHaveHybrid(payload, _accountMenuGuardKey_());
   var oldPw = payload.oldPw || payload.current || payload.oldPassword || '';
   var newPw = payload.newPw || payload.password || payload.newPassword || '';
   if (ctx.mode === 'local'){
