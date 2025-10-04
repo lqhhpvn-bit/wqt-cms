@@ -524,7 +524,13 @@ function loadLoans(page=1){
       const statusIdx = (H['Trạng thái'] ?? H['Status'] ?? -1);
       const cIdx      = (H['Tạo'] ?? H['CreatedAt'] ?? -1);
       const uIdx      = (H['Cập nhật'] ?? H['UpdatedAt'] ?? -1);
-      const eIdx      = (H['Người sửa'] ?? H['UpdatedBy'] ?? -1);
+      const eIdx      = (
+        H['Người sửa'] ??
+        H['UpdatedBy'] ??
+        H['UpdatedByEmail'] ??
+        H['UpdatedByName'] ??
+        -1
+      );
 
       const tb=document.getElementById('loan_rows'); if(!tb) return;
       tb.innerHTML='';
