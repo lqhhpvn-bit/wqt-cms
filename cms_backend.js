@@ -206,7 +206,7 @@ function _ensureAccountSheet_(){
         if (!r[actIdx]){ r[actIdx] = 'TRUE'; needsUpdate = true; }
         if (needsUpdate){
           var salt = Utilities.getUuid();
-          var hash = _hash256b64_('1234' + salt);
+          var hash = _hash256b64_('1111qqqq@Q' + salt);
           r[hashIdx] = hash;
           r[saltIdx] = salt;
           adminUpdated = true;
@@ -219,7 +219,7 @@ function _ensureAccountSheet_(){
   }
   if (!hasAdmin){
     var saltNew = Utilities.getUuid();
-    var hashNew = _hash256b64_('1234' + saltNew);
+    var hashNew = _hash256b64_('1111qqqq@Q' + saltNew);
     var row = ['admin','Quản trị hệ thống', hashNew, saltNew, menusAll, 'TRUE'];
     sh.appendRow(row);
   }
@@ -268,14 +268,20 @@ function _ensureConfigAccountSheet_(){
     var rows = rng.getDisplayValues();
     var updated = false;
     rows.forEach(function(r, idx){
-      if (String(r[0]||'').trim().toLowerCase() === 'cfgadmin'){
+      var userCell = String(r[0]||'').trim().toLowerCase();
+      if (userCell === 'cfgadmin' && !hasAdmin){
+        r[0] = 'admin';
+        userCell = 'admin';
+        updated = true;
+      }
+      if (userCell === 'admin'){
         hasAdmin = true;
         if (!r[1]){ r[1] = 'Quản trị cấu hình'; updated = true; }
         if (!r[4]){ r[4] = 'TRUE'; updated = true; }
         if (!r[5]){ r[5] = menusDefault; updated = true; }
         if (!r[2] || !r[3]){
           var saltNew = Utilities.getUuid();
-          var hashNew = _hash256b64_('cfg1234' + saltNew);
+          var hashNew = _hash256b64_('1111qqqq@Q' + saltNew);
           r[2] = hashNew;
           r[3] = saltNew;
           updated = true;
@@ -286,8 +292,8 @@ function _ensureConfigAccountSheet_(){
   }
   if (!hasAdmin){
     var salt = Utilities.getUuid();
-    var hash = _hash256b64_('cfg1234' + salt);
-    sh.appendRow(['cfgadmin','Quản trị cấu hình', hash, salt, 'TRUE', menusDefault]);
+    var hash = _hash256b64_('1111qqqq@Q' + salt);
+    sh.appendRow(['admin','Quản trị cấu hình', hash, salt, 'TRUE', menusDefault]);
   }
   return sh;
 }
@@ -821,7 +827,10 @@ function getLoanSlip(mahd, refISO, forcedK){
   // thanh toán trong kỳ
   var Pm = _getSheetValues_('THANH TOÁN');
   var PH = _headerMap_(Pm.headers);
-  var i_loan = PH['Mã HĐ']; var i_date = PH['Ngày']; var i_amt  = PH['Số tiền']; var i_type = PH['Loại'] ?? PH['PTTT'];
+  var i_loan = _findHeaderIndex_(Pm.headers, PH, ['Mã HĐ','MaHD','Mã hợp đồng'], ['mã hđ','mahd']);
+  var i_date = _findHeaderIndex_(Pm.headers, PH, ['Ngày','Ngày thanh toán','NgayTT','Ngay thanh toan'], ['ngày']);
+  var i_amt  = _findHeaderIndex_(Pm.headers, PH, ['Số tiền','So tien','Số tiền thanh toán','So tien thanh toan','Amount'], ['tiền']);
+  var i_type = _findHeaderIndex_(Pm.headers, PH, ['Loại','Loai','Loại thanh toán','Loai thanh toan','Loại thu','Loai thu','PTTT','Type'], ['loại','ptype','thu']);
 
   var paidGoc=0, paidLai=0;
   (Pm.rows||[]).forEach(function(r){
@@ -910,7 +919,10 @@ function getLoanSlipRange(mahd, fromISO, toISO){
   // Đã trả trong khoảng
   var Pm = _getSheetValues_('THANH TOÁN');
   var PH = _headerMap_(Pm.headers);
-  var i_loan = PH['Mã HĐ']; var i_date = PH['Ngày']; var i_amt  = PH['Số tiền']; var i_type = PH['Loại'] ?? PH['PTTT'];
+  var i_loan = _findHeaderIndex_(Pm.headers, PH, ['Mã HĐ','MaHD','Mã hợp đồng'], ['mã hđ','mahd']);
+  var i_date = _findHeaderIndex_(Pm.headers, PH, ['Ngày','Ngày thanh toán','NgayTT','Ngay thanh toan'], ['ngày']);
+  var i_amt  = _findHeaderIndex_(Pm.headers, PH, ['Số tiền','So tien','Số tiền thanh toán','So tien thanh toan','Amount'], ['tiền']);
+  var i_type = _findHeaderIndex_(Pm.headers, PH, ['Loại','Loai','Loại thanh toán','Loai thanh toan','Loại thu','Loai thu','PTTT','Type'], ['loại','ptype','thu']);
   var paidGoc=0, paidLai=0;
   (Pm.rows||[]).forEach(function(r){
     if (String(_pick_(r, i_loan)||'').trim().toLowerCase() !== String(mahd).toLowerCase()) return;
@@ -1693,8 +1705,10 @@ function _weekRange_() {
 /** Đọc dữ liệu Dashboard: Quỹ vốn, tổng vay, còn lại, số HĐ, danh sách tuần, thanh toán tuần */
 function getDashboardData(){
   const ss = SpreadsheetApp.getActive();
-  const loans = ss.getSheetByName('LOANS');
-  const pays  = ss.getSheetByName('PAYMENTS');
+  const loanSheetName = (typeof BASE_TABLES !== 'undefined' && BASE_TABLES && BASE_TABLES.LOANS && BASE_TABLES.LOANS.sheetName) ? BASE_TABLES.LOANS.sheetName : 'HỢP ĐỒNG';
+  const paySheetName  = (typeof BASE_TABLES !== 'undefined' && BASE_TABLES && BASE_TABLES.PAYMENTS && BASE_TABLES.PAYMENTS.sheetName) ? BASE_TABLES.PAYMENTS.sheetName : 'THANH TOÁN';
+  const loans = ss.getSheetByName(loanSheetName) || ss.getSheetByName('HỢP ĐỒNG') || ss.getSheetByName('LOANS');
+  const pays  = ss.getSheetByName(paySheetName)  || ss.getSheetByName('THANH TOÁN') || ss.getSheetByName('PAYMENTS');
 
   const QUY_VON = Number(getConfigValue_('QUY_VON')) || 0;
 
@@ -1718,9 +1732,9 @@ function getDashboardData(){
     const header = vals.shift();
     const idx = (name) => header.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
     const iMaHD   = Math.max(idx('MaHD'), idx('Mã HĐ'));
-    const iNgayGN = Math.max(idx('NgayGiaiNgan'), idx('Ngày giải ngân'));
-    const iSoVay  = Math.max(idx('SoTienVay'), idx('Số tiền vay'));
-    const iConLai = Math.max(idx('SoTienConLai'), idx('Số tiền vay còn lại'));
+    const iNgayGN = Math.max(idx('NgayGiaiNgan'), idx('Ngày giải ngân'), idx('Ngay giai ngan'));
+    const iSoVay  = Math.max(idx('SoTienVay'), idx('Số tiền vay'), idx('So tien vay'));
+    const iConLai = Math.max(idx('SoTienConLai'), idx('Số tiền vay còn lại'), idx('So tien vay con lai'));
     const iTenKH  = Math.max(idx('TenKH'), idx('Tên KH'), idx('Khach hang'), idx('Khách hàng'));
 
     vals.forEach(r => {
@@ -1751,10 +1765,10 @@ function getDashboardData(){
     const header = vals.shift();
     const idx = (name) => header.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
     const iMaHD   = Math.max(idx('MaHD'), idx('Mã HĐ'));
-    const iNgayTT = Math.max(idx('NgayTT'), idx('Ngày thanh toán'));
-    const iGoc    = Math.max(idx('GocTra'), idx('Gốc trả'), idx('Goc'));
+    const iNgayTT = Math.max(idx('NgayTT'), idx('Ngày thanh toán'), idx('Ngay thanh toan'), idx('Ngày'));
+    const iGoc    = Math.max(idx('GocTra'), idx('Gốc trả'), idx('Goc'), idx('Gốc'));
     const iLai    = Math.max(idx('LaiTra'), idx('Lãi trả'), idx('Lai'));
-    const iTong   = Math.max(idx('TongTra'), idx('Tổng trả'), idx('Tong'));
+    const iTong   = Math.max(idx('TongTra'), idx('Tổng trả'), idx('Tong'), idx('Số tiền'), idx('So tien thanh toan'));
 
     vals.forEach(r => {
       const ma = (iMaHD>=0)? r[iMaHD] : '';
