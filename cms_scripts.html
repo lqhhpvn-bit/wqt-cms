@@ -153,6 +153,13 @@ function onRoute(){
     el.classList.toggle('hidden', !isActive);
     el.classList.toggle('view-active', isActive);
   });
+  const content = document.querySelector('.content');
+  if (content) {
+    content.scrollTop = 0;
+  }
+  if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }
   setActiveTab(key);
   if (!AUTH_STATE.ok) return;
   // loader theo key (cũ giữ nguyên) — có thể refactor thành map nếu muốn
