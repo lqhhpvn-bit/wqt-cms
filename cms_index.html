@@ -159,40 +159,48 @@
               <div class="card">
                 <div class="card-head">Hợp đồng tạo trong tuần</div>
                 <div class="card-body">
-                  <table class="tbl">
-                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
-                    <tbody id="dash_loans_week"></tbody>
-                  </table>
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+                      <tbody id="dash_loans_week"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
               <div class="card">
                 <div class="card-head">Thanh toán trong tuần</div>
                 <div class="card-body">
-                  <table class="tbl">
-                    <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th></tr></thead>
-                    <tbody id="dash_pays_week"></tbody>
-                  </table>
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th></tr></thead>
+                      <tbody id="dash_pays_week"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
               <div class="card">
                 <div class="card-head">Đến hạn hôm nay</div>
                 <div class="card-body">
-                  <table class="tbl">
-                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Kỳ</th><th>Đến hạn</th></tr></thead>
-                    <tbody id="dash_due_today"></tbody>
-                  </table>
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Kỳ</th><th>Đến hạn</th></tr></thead>
+                      <tbody id="dash_due_today"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
               <div class="card">
                 <div class="card-head">Tất toán hôm nay</div>
                 <div class="card-body">
-                  <table class="tbl">
-                    <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày tất toán</th><th>Trạng thái</th></tr></thead>
-                    <tbody id="dash_close_today"></tbody>
-                  </table>
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>Mã HĐ</th><th>Tên KH</th><th>Ngày tất toán</th><th>Trạng thái</th></tr></thead>
+                      <tbody id="dash_close_today"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -251,12 +259,14 @@
           </div>
 
           <div id="cus_total" class="muted m8">—</div>
-          <table class="tbl">
-            <thead><tr>
-              <th>ID Khách</th><th>Tên</th><th>SĐT</th><th>Email</th><th>Ghi chú</th>
-            </tr></thead>
-            <tbody id="cus_rows"></tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="tbl">
+              <thead><tr>
+                <th>ID Khách</th><th>Tên</th><th>SĐT</th><th>Email</th><th>Ghi chú</th>
+              </tr></thead>
+              <tbody id="cus_rows"></tbody>
+            </table>
+          </div>
         </section>
 
         <!-- ========== LOANS ========== -->
@@ -306,7 +316,7 @@
 
           <div class="loanmgr-layout">
             <div class="loanmgr-left">
-            <div class="card loanmgr-slip">
+              <div class="card loanmgr-slip">
                 <div class="card-head">Phiếu thanh toán</div>
                 <div class="card-body">
                   <div class="slip-filters slip-filters--primary">
@@ -384,10 +394,12 @@
               <div class="card upcoming-card">
                 <div class="card-head">Kỳ sắp tới (12 kỳ)</div>
                 <div class="card-body">
-                  <table class="tbl">
-                    <thead><tr><th>Kỳ</th><th>Đến hạn</th><th>Gốc</th><th>Lãi</th><th>Tổng</th></tr></thead>
-                    <tbody id="upcoming_rows"></tbody>
-                  </table>
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>Kỳ</th><th>Đến hạn</th><th>Gốc</th><th>Lãi</th><th>Tổng</th></tr></thead>
+                      <tbody id="upcoming_rows"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -402,32 +414,30 @@
                       <input id="pay_loan" class="input" placeholder="Mã HĐ" />
                     </div>
                   </div>
-                      <div class="row">
-                        <div class="col-4 field">
-                          <label for="pay_date">Ngày</label>
-                          <input id="pay_date" type="date" class="input" />
-                        </div>
-                        <div class="col-4 field">
-                          <label for="pay_type">Loại</label>
-                          <select id="pay_type" class="input"></select>
-                        </div>
-                        <div class="col-4 field">
-                          <label for="pay_amount">Số tiền</label>
-                          <input id="pay_amount" class="input" />
-                        </div>
-                      </div>
-                      <textarea id="pay_note" class="input" placeholder="Ghi chú"></textarea>
+                  <div class="row">
+                    <div class="col-4 field">
+                      <label for="pay_date">Ngày</label>
+                      <input id="pay_date" type="date" class="input" />
                     </div>
-                    <div class="card-foot">
-                      <button id="pay_clear" class="btn">Mới</button>
-                      <button id="pay_save" class="btn primary">Lưu</button>
-                      <button id="pay_delete" class="btn danger">Xoá</button>
+                    <div class="col-4 field">
+                      <label for="pay_type">Loại</label>
+                      <select id="pay_type" class="input"></select>
+                    </div>
+                    <div class="col-4 field">
+                      <label for="pay_amount">Số tiền</label>
+                      <input id="pay_amount" class="input" />
                     </div>
                   </div>
+                  <textarea id="pay_note" class="input" placeholder="Ghi chú"></textarea>
+                </div>
+                <div class="card-foot">
+                  <button id="pay_clear" class="btn">Mới</button>
+                  <button id="pay_save" class="btn primary">Lưu</button>
+                  <button id="pay_delete" class="btn danger">Xoá</button>
                 </div>
               </div>
-
             </div>
+
           </div>
         </section>
 
@@ -457,16 +467,16 @@
             </div>
           </div>
 
-          <div class="card table-card m16">
-            <div class="table-card-head">
-              <div class="card-head">Chi tiết thanh toán</div>
-              <div class="table-meta muted" id="hist_sum">—</div>
-            </div>
-            <div class="table-scroll">
-              <table class="tbl">
-                <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>PaymentID</th></tr></thead>
-                <tbody id="hist_rows"></tbody>
-              </table>
+          <div class="card m16">
+            <div class="card-head">Chi tiết thanh toán</div>
+            <div class="card-body">
+              <div class="table-scroll">
+                <table class="tbl">
+                  <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>PaymentID</th></tr></thead>
+                  <tbody id="hist_rows"></tbody>
+                </table>
+              </div>
+              <div class="muted m16" id="hist_sum">—</div>
             </div>
           </div>
         </section>
@@ -512,15 +522,15 @@
                 </div>
               </div>
 
-              <div class="card table-card m16">
-                <div class="table-card-head">
-                  <div class="card-head">Lịch sử tương tác</div>
-                </div>
-                <div class="table-scroll">
-                  <table class="tbl">
-                    <thead><tr><th>ID</th><th>ID Khách</th><th>Ngày</th><th>Kênh</th><th>Nhân viên</th><th>Tag</th><th>Nội dung</th><th></th></tr></thead>
-                    <tbody id="crm_interaction_rows"></tbody>
-                  </table>
+              <div class="card m16">
+                <div class="card-head">Lịch sử tương tác</div>
+                <div class="card-body">
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>ID</th><th>ID Khách</th><th>Ngày</th><th>Kênh</th><th>Nhân viên</th><th>Tag</th><th>Nội dung</th><th></th></tr></thead>
+                      <tbody id="crm_interaction_rows"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -566,15 +576,15 @@
                 </div>
               </div>
 
-              <div class="card table-card m16">
-                <div class="table-card-head">
-                  <div class="card-head">Danh sách công việc</div>
-                </div>
-                <div class="table-scroll">
-                  <table class="tbl">
-                    <thead><tr><th>TaskID</th><th>ID Khách</th><th>Tiêu đề</th><th>Hạn</th><th>Trạng thái</th><th>Phụ trách</th><th>Ghi chú</th><th></th></tr></thead>
-                    <tbody id="crm_task_rows"></tbody>
-                  </table>
+              <div class="card m16">
+                <div class="card-head">Danh sách công việc</div>
+                <div class="card-body">
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>TaskID</th><th>ID Khách</th><th>Tiêu đề</th><th>Hạn</th><th>Trạng thái</th><th>Phụ trách</th><th>Ghi chú</th><th></th></tr></thead>
+                      <tbody id="crm_task_rows"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -604,15 +614,15 @@
                 </div>
               </div>
 
-              <div class="card table-card m16">
-                <div class="table-card-head">
-                  <div class="card-head">Lịch sử đánh giá</div>
-                </div>
-                <div class="table-scroll">
-                  <table class="tbl">
-                    <thead><tr><th>ID Khách</th><th>Điểm</th><th>Tiêu chí</th><th>Nhận xét</th><th>Cập nhật</th></tr></thead>
-                    <tbody id="crm_rating_rows"></tbody>
-                  </table>
+              <div class="card m16">
+                <div class="card-head">Lịch sử đánh giá</div>
+                <div class="card-body">
+                  <div class="table-scroll">
+                    <table class="tbl">
+                      <thead><tr><th>ID Khách</th><th>Điểm</th><th>Tiêu chí</th><th>Nhận xét</th><th>Cập nhật</th></tr></thead>
+                      <tbody id="crm_rating_rows"></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -646,7 +656,6 @@
 
         <!-- ========== SETTINGS (kèm Import) ========== -->
         <section id="view-settings" class="view hidden">
-          <!-- giữ nguyên nội dung như bạn gửi -->
           <h2>Cấu hình</h2>
           <div class="card">
             <div class="card-head">Thiết lập chung</div>
@@ -721,7 +730,6 @@
 
         <!-- ========== TELEGRAM ========== -->
         <section id="view-telegram" class="view hidden">
-          <!-- giữ nguyên block Telegram như bạn gửi -->
           <h2>Quản lý Telegram</h2>
           <div class="card">
             <div class="card-head">Bot & Chat mặc định</div>
@@ -732,15 +740,15 @@
             </div>
           </div>
           <div class="grid-2 tg-columns">
-            <div class="card table-card">
-              <div class="table-card-head">
-                <div class="card-head">Danh sách nhóm</div>
-              </div>
-              <div class="table-scroll">
-                <table class="tbl">
-                  <thead><tr><th>Tên</th><th>chat_id</th><th>Mục đích</th><th></th></tr></thead>
-                  <tbody id="tg_rows"></tbody>
-                </table>
+            <div class="card">
+              <div class="card-head">Danh sách nhóm</div>
+              <div class="card-body">
+                <div class="table-scroll">
+                  <table class="tbl">
+                    <thead><tr><th>Tên</th><th>chat_id</th><th>Mục đích</th><th></th></tr></thead>
+                    <tbody id="tg_rows"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
             <div class="tg-stack">
@@ -774,7 +782,6 @@
 
         <!-- ========== ACCOUNT ========== -->
         <section id="view-account" class="view hidden">
-          <!-- giữ nguyên block Account -->
           <h2>Cài đặt tài khoản</h2>
           <div class="grid-2">
             <div class="card">

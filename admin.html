@@ -56,97 +56,42 @@
       font-weight: 600;
       transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.2s ease;
     }
-    .btn.primary {
-      background: var(--indigo);
-      border-color: var(--indigo);
-    }
-    .btn.danger {
-      background: #ef4444;
-      border-color: #ef4444;
-    }
-    .btn.ghost {
-      background: #fff;
-      border-color: #d1d5db;
-      color: #111827;
-    }
-    .btn:hover {
-      opacity: 0.95;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-    }
+    .btn.primary { background: var(--indigo); border-color: var(--indigo); }
+    .btn.danger  { background: #ef4444; border-color: #ef4444; }
+    .btn.ghost   { background: #fff; border-color: #d1d5db; color: #111827; }
+    .btn:hover   { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
 
-    .layout {
-      display: flex;
-      min-height: calc(100vh - 72px);
-    }
+    .layout { display: flex; min-height: calc(100vh - 72px); }
     .sidebar {
-      width: 240px;
-      background: var(--sidebar);
-      color: var(--sidebar-text);
-      padding: 24px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      width: 240px; background: var(--sidebar); color: var(--sidebar-text);
+      padding: 24px 18px; display: flex; flex-direction: column; gap: 12px;
     }
-    .sidebar h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .menu-vertical {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 8px;
-    }
+    .sidebar h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .menu-vertical { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
     .tabbtn {
-      appearance: none;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 14px;
-      background: rgba(248, 250, 252, 0.08);
-      color: inherit;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: background 0.18s ease, transform 0.12s ease;
+      appearance: none; border: none; border-radius: 12px; padding: 12px 14px;
+      background: rgba(248,250,252,0.08); color: inherit; font-weight: 600;
+      text-align: left; cursor: pointer; transition: background 0.18s ease, transform 0.12s ease;
     }
-    .tabbtn:hover { transform: translateX(2px); background: rgba(248, 250, 252, 0.18); }
+    .tabbtn:hover { transform: translateX(2px); background: rgba(248,250,252,0.18); }
     .tabbtn.active { background: #fff; color: var(--sidebar); }
 
-    .content {
-      flex: 1;
-      padding: 24px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
+    .content { flex: 1; padding: 24px; position: relative; display: flex; flex-direction: column; gap: 18px; }
     .content section { display: flex; flex-direction: column; gap: 18px; }
 
     .card {
-      background: #fff;
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: var(--pad);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      background: #fff; border: 1px solid var(--card-border); border-radius: var(--radius);
+      padding: var(--pad); box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
 
     .row { display: flex; gap: 12px; flex-wrap: wrap; }
     .col { flex: 1; min-width: 220px; }
     label { display: block; font-size: 12px; color: #475569; margin: 4px 0 6px; }
     input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background: #fff;
-      font-size: 14px;
+      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; font-size: 14px;
     }
     input:focus, select:focus, textarea:focus {
-      border-color: var(--indigo);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-      outline: none;
+      border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); outline: none;
     }
     input[readonly] { background: #f3f4f6; color: #6b7280; }
     .chk { display: flex; align-items: center; gap: 8px; margin-top: 26px; }
@@ -158,24 +103,11 @@
 
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
     .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #eef2ff;
-      color: #3730a3;
-      font-size: 12px;
-      font-weight: 600;
-      margin: 2px;
+      display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px;
+      background: #eef2ff; color: #3730a3; font-size: 12px; font-weight: 600; margin: 2px;
     }
     .table-btn {
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      border: 1px solid #d1d5db;
-      background: #fff;
-      color: #111;
-      cursor: pointer;
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; border: 1px solid #d1d5db; background: #fff; color: #111; cursor: pointer;
     }
     .table-btn.danger { border-color: #ef4444; color: #b91c1c; }
     .table-btn.primary { border-color: var(--indigo); color: var(--indigo); }
@@ -188,81 +120,31 @@
     .view.hidden { display: none; }
 
     .login-blocker {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(246, 247, 251, 0.94);
-      backdrop-filter: blur(2px);
-      z-index: 5;
-      padding: 24px;
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(246,247,251,0.94); backdrop-filter: blur(2px); z-index: 5; padding: 24px;
     }
     .login-blocker.hidden { display: none; }
     .login-blocker-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 420px;
-      width: 100%;
-      text-align: left;
-      border: 1px solid var(--card-border);
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+      background: #fff; border-radius: 16px; padding: 24px; max-width: 420px; width: 100%; text-align: left;
+      border: 1px solid var(--card-border); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 18px;
     }
     .login-blocker-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
     .login-form { display: flex; flex-direction: column; gap: 12px; }
     .login-field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 6px;
+      display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px;
     }
-    .login-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 4px;
-    }
+    .login-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 4px; }
     .login-actions .btn { min-width: 140px; }
 
-    dialog.modal,
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      border: none;
-      background: transparent;
+    dialog.modal, .modal-overlay {
+      position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; border: none; background: transparent;
     }
-    dialog.modal[open],
-    .modal-overlay.show { display: flex; }
-    dialog.modal::backdrop { background: rgba(17, 24, 39, 0.35); }
-    .modal-overlay::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(17, 24, 39, 0.35);
-    }
-    dialog.modal .box,
-    .modal-overlay .box {
-      position: relative;
-      width: min(420px, 96vw);
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--card-border);
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    dialog.modal[open], .modal-overlay.show { display: flex; }
+    dialog.modal::backdrop { background: rgba(17,24,39,0.35); }
+    .modal-overlay::before { content: ""; position: absolute; inset: 0; background: rgba(17,24,39,0.35); }
+    dialog.modal .box, .modal-overlay .box {
+      position: relative; width: min(420px, 96vw); background: #fff; border-radius: 16px; box-shadow: var(--shadow);
+      border: 1px solid var(--card-border); padding: 18px; display: flex; flex-direction: column; gap: 12px;
     }
     .modal .head { display: flex; align-items: center; gap: 12px; }
     .modal .title { font-weight: 700; font-size: 16px; }
@@ -314,7 +196,7 @@
             <div class="login-actions">
               <button class="btn primary" type="button" id="btn_login_do">Đăng nhập</button>
             </div>
-            <div class="muted" style="font-size:12px">Bạn cũng có thể đăng nhập Google (nếu email của bạn nằm trong danh sách cho phép).</div>
+            <div class="muted" style="font-size:12px">Đây là tài khoản RIÊNG cho trang Quản trị cấu hình.</div>
           </div>
         </div>
       </div>
@@ -392,7 +274,7 @@
 
       <section id="view-accounts" class="view hidden">
         <div class="card" id="cardAccounts">
-          <h2 style="margin-top:0">Quản lý tài khoản đăng nhập WQT</h2>
+          <h2 style="margin-top:0">Quản lý tài khoản đăng nhập WQT (RIÊNG cho Admin)</h2>
           <div class="row">
             <div class="col">
               <label>Tài khoản</label>
@@ -578,12 +460,8 @@
 
       const changed = prev.ok !== AUTH_STATE.ok || prev.principal !== AUTH_STATE.principal || prev.mode !== AUTH_STATE.mode;
       if (changed){
-        window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, {
-          detail: {
-            ok: AUTH_STATE.ok,
-            mode: AUTH_STATE.mode,
-            principal: AUTH_STATE.principal
-          }
+        window.dispatchEvent(new CustomEvent('wqt-admin-auth-change', {
+          detail: { ok: AUTH_STATE.ok, mode: AUTH_STATE.mode, principal: AUTH_STATE.principal }
         }));
       }
     }
@@ -611,8 +489,36 @@
       else loadSchema();
     }
 
+    /** ========== API CALL WRAPPER (đã trỏ sang aadmin_*) ========== */
+    function runApi(fn, payload, onOk, onFail){
+      const req = withSession(payload || {});
+      const ok = (typeof onOk === 'function') ? onOk : (() => {});
+      const fail = (typeof onFail === 'function') ? onFail : (err => alert(err?.message || err));
+
+      if (typeof google === 'undefined' || !google.script || !google.script.run){
+        console.warn('Google Apps Script runtime không sẵn sàng.');
+        fail({ message: 'Không thể kết nối tới Apps Script.' });
+        return;
+      }
+      const runner = google.script.run
+        .withSuccessHandler(ok)
+        .withFailureHandler(err => {
+          const msg = err?.message || err;
+          const lower = String(msg || '').toLowerCase();
+          if (lower.includes('chưa đăng nhập') || lower.includes('cần đăng nhập')){
+            setToken('');
+            setAuthState(false);
+            showLoginDialog();
+            return;
+          }
+          fail(err);
+        });
+      runner[fn](req);
+    }
+
+    /** ========== SCHEMA UI ========== */
     function loadSchema(){
-      runApi('api_schema_list', {}, defs => {
+      runApi('aadmin_schema_list', {}, defs => {
         SCHEMA = defs || {};
         const sel = document.getElementById('tbl');
         if (!sel) return;
@@ -646,7 +552,11 @@
       (def.cols || []).forEach((f, idx) => {
         const tr = document.createElement('tr');
         const label = def.labels?.[f] || '';
-        tr.innerHTML = `<td>${idx + 1}</td><td>${f}</td><td>${label}</td><td></td><td></td><td></td><td></td>`;
+        const typ = def.types?.[f] || '';
+        const req = def.required?.[f] ? '✔' : '';
+        const enums = def.enums?.[f] || '';
+        const dft = def.defaults?.[f] || '';
+        tr.innerHTML = `<td>${idx + 1}</td><td>${f}</td><td>${label}</td><td>${typ}</td><td>${req}</td><td>${enums}</td><td>${dft}</td>`;
         const tdAct = document.createElement('td');
         if (f !== def.idCol){
           const btn = document.createElement('button');
@@ -671,7 +581,7 @@
     function deleteField(field){
       if (!field) return;
       if (!confirm('Xoá cột "' + field + '" khỏi schema?')) return;
-      runApi('api_schema_delete', { table: current, field }, () => loadSchema(), showErr);
+      runApi('aadmin_schema_delete', { table: current, field }, () => loadSchema(), showErr);
     }
 
     function addField(){
@@ -685,7 +595,7 @@
       if (!field){ alert('Vui lòng nhập tên Trường (Field).'); return; }
       if (SCHEMA[current].cols.includes(field)){ alert('Cột đã tồn tại trong schema.'); return; }
 
-      runApi('api_schema_add', {
+      runApi('aadmin_schema_add', {
         table: current,
         field,
         label,
@@ -700,15 +610,16 @@
     }
 
     function applySchema(){
-      runApi('api_schema_apply', { table: current }, () => {
+      runApi('aadmin_schema_apply', { table: current }, () => {
         alert('Đã áp dụng Schema sang các sheet dữ liệu.');
         loadSchema();
       }, showErr);
     }
 
+    /** ========== ACCOUNTS UI (ADMIN RIÊNG) ========== */
     function loadAccounts(){
-      runApi('admin_listLocalUsers', {}, res => {
-        ACCOUNT_MENUS = res?.allMenus || [];
+      runApi('aadmin_listLocalUsers', {}, res => {
+        ACCOUNT_MENUS = res?.allMenus || ['schema','accounts'];
         ACCOUNTS = res?.rows || [];
         const selected = selectedAccount && ACCOUNTS.find(a => String(a.user).toLowerCase() === String(selectedAccount).toLowerCase());
         if (!selected) selectedAccount = null;
@@ -726,15 +637,9 @@
       const wrap = document.getElementById('acc_menus');
       if (!wrap) return;
       wrap.innerHTML = '';
-      if (!ACCOUNT_MENUS.length){
-        const span = document.createElement('span');
-        span.className = 'muted';
-        span.textContent = 'Chưa có cấu hình MENU_CONFIG.';
-        wrap.appendChild(span);
-        return;
-      }
+      const keys = Object.keys(MENU_LABELS);
       const selectedSet = new Set((selectedMenus || []).map(m => String(m)));
-      ACCOUNT_MENUS.forEach(key => {
+      keys.forEach(key => {
         const id = 'acc_menu_' + key;
         const label = document.createElement('label');
         label.setAttribute('for', id);
@@ -755,13 +660,14 @@
       const tbody = document.getElementById('acc_rows');
       if (!tbody) return;
       tbody.innerHTML = '';
-      ACCOUNTS.forEach(acc => {
+      (ACCOUNTS || []).forEach(acc => {
         const tr = document.createElement('tr');
         const tdUser = document.createElement('td'); tdUser.textContent = acc.user || '';
         const tdDisp = document.createElement('td'); tdDisp.textContent = acc.display || acc.user || '';
         const tdMenus = document.createElement('td');
-        if (acc.menus && acc.menus.length){
-          acc.menus.forEach(m => {
+        const menus = Array.isArray(acc.menus) ? acc.menus : String(acc.menus || '').split(',').map(s=>s.trim()).filter(Boolean);
+        if (menus.length){
+          menus.forEach(m => {
             const chip = document.createElement('span');
             chip.className = 'badge';
             chip.textContent = MENU_LABELS[m] || m;
@@ -771,7 +677,7 @@
           tdMenus.innerHTML = '<span class="muted">Không có</span>';
         }
         const tdActive = document.createElement('td');
-        tdActive.textContent = acc.active ? 'Đang hoạt động' : 'Đã khoá';
+        tdActive.textContent = (acc.active === true || String(acc.active).toLowerCase()==='true') ? 'Đang hoạt động' : 'Đã khoá';
         const tdAct = document.createElement('td');
         tdAct.style.whiteSpace = 'nowrap';
         const btnSel = document.createElement('button');
@@ -811,7 +717,7 @@
       const inputDisplay = document.getElementById('acc_display');
       if (inputDisplay) inputDisplay.value = acc.display || acc.user || '';
       const pw = document.getElementById('acc_password'); if (pw) pw.value = '';
-      const active = document.getElementById('acc_active'); if (active) active.checked = !!acc.active;
+      const active = document.getElementById('acc_active'); if (active) active.checked = (acc.active === true || String(acc.active).toLowerCase()==='true');
       renderMenuChoices(acc.menus || []);
       const msg = document.getElementById('acc_msg');
       if (msg) msg.textContent = 'Đang chỉnh sửa tài khoản "' + (acc.user || '') + '".';
@@ -838,9 +744,9 @@
       const active = document.getElementById('acc_active')?.checked !== false;
       const menus = collectSelectedMenus();
       if (!menus.length && !confirm('Tài khoản không có quyền menu nào. Bạn chắc chắn muốn lưu?')) return;
-      const payload = { user, display, active, menus };
+      const payload = { user, display, active, menus: menus.join(',' ) };
       if (password) payload.password = password;
-      runApi('admin_upsertLocalUser', payload, res => {
+      runApi('aadmin_upsertLocalUser', payload, res => {
         const msg = document.getElementById('acc_msg');
         if (msg) msg.textContent = 'Đã lưu tài khoản "' + user + '".';
         if (!password){
@@ -858,7 +764,7 @@
     function deleteAccount(user){
       if (!user) return;
       if (!confirm('Xoá tài khoản "' + user + '"?')) return;
-      runApi('admin_deleteLocalUser', { user }, () => {
+      runApi('aadmin_deleteLocalUser', { user }, () => {
         if (selectedAccount && String(selectedAccount).toLowerCase() === String(user).toLowerCase()){
           clearAccountForm();
           const msg = document.getElementById('acc_msg');
@@ -868,18 +774,14 @@
       }, showErr);
     }
 
+    // ====== TOKEN / SESSION (ADMIN RIÊNG) ======
     const SESSION_STORAGE_KEY = 'WQT_ADMIN_TOKEN';
-    const SESSION_EVENT_NAME = 'wqt:session-change';
-    const AUTH_EVENT_NAME = 'wqt:auth-change';
     const getToken = () => localStorage.getItem(SESSION_STORAGE_KEY) || '';
     const setToken = (t) => {
       const token = t ? String(t) : '';
-      if (token){
-        localStorage.setItem(SESSION_STORAGE_KEY, token);
-      } else {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
-      }
-      window.dispatchEvent(new CustomEvent(SESSION_EVENT_NAME, { detail: { token } }));
+      if (token){ localStorage.setItem(SESSION_STORAGE_KEY, token); }
+      else { localStorage.removeItem(SESSION_STORAGE_KEY); }
+      window.dispatchEvent(new CustomEvent('wqt-admin-session-change', { detail: { token } }));
     };
     const withSession = (payload = {}) => {
       const out = Object.assign({}, payload || {});
@@ -888,66 +790,14 @@
       return out;
     };
 
-    function runApi(fn, payload, onOk, onFail){
-      const req = withSession(payload);
-      const ok = (typeof onOk === 'function') ? onOk : (() => {});
-      const fail = (typeof onFail === 'function') ? onFail : (err => alert(err?.message || err));
-      if (typeof google === 'undefined' || !google.script || !google.script.run){
-        console.warn('Google Apps Script runtime không sẵn sàng.');
-        fail({ message: 'Không thể kết nối tới Apps Script.' });
-        return;
-      }
-      const runner = google.script.run
-        .withSuccessHandler(ok)
-        .withFailureHandler(err => {
-          const msg = err?.message || err;
-          const lower = String(msg || '').toLowerCase();
-          if (lower.includes('chưa đăng nhập') || lower.includes('cần đăng nhập')){
-            setToken('');
-            setAuthState(false);
-            showLoginDialog();
-            return;
-          }
-          fail(err);
-        });
-      runner[fn](req);
-    }
-
     function openLogin(){ showLoginDialog(); }
-
     function showLoginDialog(){
       const blocker = document.getElementById('login_blocker');
       if (blocker) blocker.classList.remove('hidden');
-      const dlg = document.getElementById('dlg_login');
-      if (dlg){
-        if (dlg.classList?.contains('modal-overlay')){
-          dlg.classList.add('show');
-        } else if (typeof dlg.showModal === 'function'){
-          if (!dlg.open) dlg.showModal();
-        } else {
-          dlg.setAttribute('open', 'true');
-          dlg.classList.add('show');
-        }
-      }
       const user = document.getElementById('login_user');
-      if (user){
-        setTimeout(() => { user.focus(); user.select(); }, 0);
-      }
+      if (user){ setTimeout(() => { user.focus(); user.select(); }, 0); }
     }
-
-    function closeLoginDialog(){
-      const dlg = document.getElementById('dlg_login');
-      if (dlg){
-        if (dlg.classList?.contains('modal-overlay')){
-          dlg.classList.remove('show');
-        } else if (typeof dlg.close === 'function'){
-          dlg.close();
-        } else {
-          dlg.removeAttribute('open');
-          dlg.classList.remove('show');
-        }
-      }
-    }
+    function closeLoginDialog(){ /* giữ nền modal */ }
 
     function handleLoginSuccess(res, fallbackUser){
       if (!res?.ok || !res.token) return false;
@@ -960,15 +810,15 @@
 
     function doLogin(){
       const u = (document.getElementById('login_user')?.value || '').trim();
-      const p = document.getElementById('login_pass')?.value || '';
+      const p = (document.getElementById('login_pass')?.value || '');
       if (!u || !p) return alert('Nhập tài khoản và mật khẩu.');
-      runApi('config_local_login_api', { user: u, password: p }, res => {
+      runApi('aadmin_login', { user: u, password: p }, res => {
         if (!handleLoginSuccess(res, u)) alert('Đăng nhập thất bại.');
       }, e => alert(e?.message || e));
     }
 
     function ensureLogin(){
-      runApi('whoami', {}, res => {
+      runApi('aadmin_whoami', {}, res => {
         if (res && res.ok) {
           setAuthState(true, res);
         } else {
@@ -983,7 +833,7 @@
 
     function logoutAll(){
       const t = getToken();
-      runApi('config_local_logout_api', { token: t }, () => {
+      runApi('aadmin_logout', { token: t }, () => {
         setToken('');
         setAuthState(false);
         showLoginDialog();
