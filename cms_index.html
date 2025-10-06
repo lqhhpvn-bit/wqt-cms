@@ -457,14 +457,16 @@
             </div>
           </div>
 
-          <div class="card m16">
-            <div class="card-head">Chi tiết thanh toán</div>
-            <div class="card-body">
+          <div class="card table-card m16">
+            <div class="table-card-head">
+              <div class="card-head">Chi tiết thanh toán</div>
+              <div class="table-meta muted" id="hist_sum">—</div>
+            </div>
+            <div class="table-scroll">
               <table class="tbl">
                 <thead><tr><th>Ngày</th><th>Mã HĐ</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>PaymentID</th></tr></thead>
                 <tbody id="hist_rows"></tbody>
               </table>
-              <div class="muted m16" id="hist_sum">—</div>
             </div>
           </div>
         </section>
@@ -510,9 +512,11 @@
                 </div>
               </div>
 
-              <div class="card m16">
-                <div class="card-head">Lịch sử tương tác</div>
-                <div class="card-body">
+              <div class="card table-card m16">
+                <div class="table-card-head">
+                  <div class="card-head">Lịch sử tương tác</div>
+                </div>
+                <div class="table-scroll">
                   <table class="tbl">
                     <thead><tr><th>ID</th><th>ID Khách</th><th>Ngày</th><th>Kênh</th><th>Nhân viên</th><th>Tag</th><th>Nội dung</th><th></th></tr></thead>
                     <tbody id="crm_interaction_rows"></tbody>
@@ -562,9 +566,11 @@
                 </div>
               </div>
 
-              <div class="card m16">
-                <div class="card-head">Danh sách công việc</div>
-                <div class="card-body">
+              <div class="card table-card m16">
+                <div class="table-card-head">
+                  <div class="card-head">Danh sách công việc</div>
+                </div>
+                <div class="table-scroll">
                   <table class="tbl">
                     <thead><tr><th>TaskID</th><th>ID Khách</th><th>Tiêu đề</th><th>Hạn</th><th>Trạng thái</th><th>Phụ trách</th><th>Ghi chú</th><th></th></tr></thead>
                     <tbody id="crm_task_rows"></tbody>
@@ -598,9 +604,11 @@
                 </div>
               </div>
 
-              <div class="card m16">
-                <div class="card-head">Lịch sử đánh giá</div>
-                <div class="card-body">
+              <div class="card table-card m16">
+                <div class="table-card-head">
+                  <div class="card-head">Lịch sử đánh giá</div>
+                </div>
+                <div class="table-scroll">
                   <table class="tbl">
                     <thead><tr><th>ID Khách</th><th>Điểm</th><th>Tiêu chí</th><th>Nhận xét</th><th>Cập nhật</th></tr></thead>
                     <tbody id="crm_rating_rows"></tbody>
@@ -724,9 +732,11 @@
             </div>
           </div>
           <div class="grid-2 tg-columns">
-            <div class="card">
-              <div class="card-head">Danh sách nhóm</div>
-              <div class="card-body">
+            <div class="card table-card">
+              <div class="table-card-head">
+                <div class="card-head">Danh sách nhóm</div>
+              </div>
+              <div class="table-scroll">
                 <table class="tbl">
                   <thead><tr><th>Tên</th><th>chat_id</th><th>Mục đích</th><th></th></tr></thead>
                   <tbody id="tg_rows"></tbody>
