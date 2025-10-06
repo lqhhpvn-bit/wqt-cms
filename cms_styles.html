@@ -672,8 +672,8 @@
     .two-col{ grid-template-columns:1fr; }
   }
   @media (max-width: 720px){
-    .app{ grid-template-columns: 1fr; }
-    #menu{ position:relative; top:auto; max-height:none; }
+    .app{ grid-template-columns: 240px minmax(0, 1fr); }
+    #menu{ position:sticky; top:56px; max-height:calc(100vh - 72px); }
     .dash-week-grid{ grid-template-columns:1fr; }
   }
 
